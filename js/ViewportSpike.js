@@ -16,18 +16,22 @@ export default {
         }
     },
     methods: {
-        eventme(e) {
-            console.log("e")
-            e.preventDefault()
-        },
         handleScroll(e) {
             this.zoom = _.clamp(this.zoom + e.deltaY * 0.01, this.zoomMin, this.zoomMax);
         }
     },
     template: `
+    <div class="tabs">
+  <ul>
+    <li class="is-active"><a>Pictures</a></li>
+    <li><a>Music</a></li>
+    <li><a>Videos</a></li>
+    <li><a>Documents</a></li>
+  </ul>
+</div>
 		<div class="section">
 			<div class="content main-header" :style="cssProps" @wheel.ctrl.prevent="handleScroll">
-				<h1>Main</h1>
+				<h1>Viewport</h1>
 				<div class="row">
 					<button @click="zoom = zoom - 0.1" class="button">-</button>
 					<div>{{zoom.toFixed(2)}}</div>
