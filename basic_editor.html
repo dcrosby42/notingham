@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+
+    <!-- <script src="https://unpkg.com/vue@next"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512&#45;WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no&#45;referrer"></script> -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css"> -->
+    <!-- <link rel="stylesheet" href="css/styles.css"> -->
+
+    <!-- Brief instructions https://www.npmjs.com/package/@toast-ui/editor  -->
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+
+</head>
+
+<body>
+    <div id="editor"></div>
+    <script type="module">
+      const Editor = toastui.Editor
+      window.dave = new Editor({
+        el: document.querySelector('#editor'),
+        height: '500px',
+        initialEditType: 'markdown',
+        previewStyle: 'vertical'
+      })
+      // window.editor = editor
+    </script>
+</body>
+
+</html>

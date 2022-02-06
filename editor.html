@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512&#45;WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no&#45;referrer"></script>
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css"> -->
+    <!-- <link rel="stylesheet" h<script src="https://cdn.jsdelivr.net/npm/@toast-ui/vue-editor@3.1.2/dist/toastui-vue-editor.min.js"></script>ref="css/styles.css"> -->
+
+    <!-- Brief instructions https://www.npmjs.com/package/@toast-ui/editor  -->
+
+    <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script> -->
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script>
+    <!-- <script src="https://uicdn.toast.com/editor-plugin-uml/latest/toastui-editor-plugin-uml.min.js"></script> -->
+    <script src="https://uicdn.toast.com/editor-plugin-uml/latest/toastui-editor-plugin-uml.min.js"></script>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@toast-ui/vue-editor@3.1.2/dist/toastui-vue-editor.min.js"></script> -->
+
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import VueEditor from "./js/vue-editor/VueEditor.js"
+
+
+        const { Editor } = toastui;
+        const { uml } = Editor.plugin
+
+        const MyApp = {
+            data() {
+              return {
+                options: {
+                  plugins: [ uml ]
+
+                },
+                content: `$$uml
+partition Conductofr {
+  (*) --> "Climbdfd s on Platform"
+  --> === S1 ===
+  --> Bows
+}
+
+partition Audience  {
+  === S1 === --> Applauds
+}
+
+partition Conductor {
+  Bows --> === S2 ===
+  --> WavesArmes
+  Applauds --> === S2 ===
+}
+
+partition Orchestra #CCCCEE {
+  WavesArmes --> Introduction
+  --> "Play music"
+}
+$$`,
+                editor: null,
+              }
+            },
+            created() {
+              window.App = this;
+            },
+            mounted() {
+              this.editor = this.$refs.editor.editor
+            },
+            template: '<div><VueEditor ref="editor" :initialValue="content" :options="options"/></div>',
+            components: {
+              VueEditor
+            }
+        };
+        // const Editor = toastui.Editor;
+        // const editor = new VueEditor({
+        //     el: document.querySelector('#editor'),
+        //     height: '500px',
+        //     initialEditType: 'markdown',
+        //     previewStyle: 'vertical'
+        // });
+        // window.editor = editor;
+
+        Vue.createApp(MyApp).mount('#app');
+    </script>
+</body>
+
+</html>
