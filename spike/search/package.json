@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "elasticlunr": "^0.9.5",
+    "flexsearch": "^0.7.21",
+    "lodash": "^4.17.21"
+  }
+}
