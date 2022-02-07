@@ -1,4 +1,5 @@
 
+
 # Toast UI Editor Docs / links
 
 API and Examples: https://nhn.github.io/tui.editor/latest/
@@ -109,3 +110,9 @@ dist
 ```
 *(didn't use --save-dev on these guys, forgot, didn't go back and correct, unsure if it matters just now)
 
+
+# go-assets
+
+https://pkg.go.dev/github.com/jessevdk/go-assets
+
+go get -u github.com/jessevdk/go-assets-builder

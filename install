@@ -2,4 +2,9 @@
 pushd `dirname ${BASH_SOURCE[0]}` > /dev/null; HERE=`pwd`; popd > /dev/null
 cd $HERE
 
-notingham server --port 9000 --data-dir data
+set -ex
+
+go-assets-builder -p site -o site/assets.go -s /public public
+
+go install
+

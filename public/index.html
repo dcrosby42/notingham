@@ -12,13 +12,14 @@
     <!-- Brief instructions https://www.npmjs.com/package/@toast-ui/editor  -->
 
     <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script> -->
-    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
     <!-- <script src="https://uicdn.toast.com/editor-plugin-uml/latest/toastui-editor-plugin-uml.min.js"></script> -->
     <script src="https://uicdn.toast.com/editor-plugin-uml/latest/toastui-editor-plugin-uml.min.js"></script>
 
     <!-- <script src="https://cdn.jsdelivr.net/npm/@toast-ui/vue-editor@3.1.2/dist/toastui-vue-editor.min.js"></script> -->
 
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css" />
 
 </head>
 
@@ -35,6 +36,7 @@
             data() {
               return {
                 options: {
+                  theme: "dark",
                   plugins: [ uml ]
 
                 },
@@ -69,7 +71,7 @@ $$`,
             mounted() {
               this.editor = this.$refs.editor.editor
             },
-            template: '<div><VueEditor ref="editor" :initialValue="content" :options="options"/></div>',
+            template: '<div><VueEditor ref="editor" height="500px" :initialValue="content" :options="options"/></div>',
             components: {
               VueEditor
             }
