@@ -10,7 +10,7 @@ export default {
     data() {
         return {
             options: {
-                // theme: "dark",
+                theme: "dark",
                 // plugins: [uml]
             },
             // content: "# CAP Triage",

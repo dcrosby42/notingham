@@ -9,6 +9,11 @@
 
 body {}
 
+body.darkmode {
+    background-color: black;
+    color: white;
+}
+
 .editor-home {
     height: 100%;
     /* background-color: red; */

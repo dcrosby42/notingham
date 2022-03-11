@@ -18,6 +18,13 @@ export default {
         console.log(this.notes)
     },
     methods: {
+        noteItemStyle(note) {
+            return {
+                'has-text-light': true,
+                'has-background-dark': !note.active,
+                'is-active': note.active,
+            }
+        }
 
     },
     computed: {
@@ -58,16 +65,16 @@ export default {
     <div class="columns">
       <div class="column is-one-fifth">
         <!-- cribbed from https://stackoverflow.com/questions/63262296/how-to-get-a-fixed-sidebar-in-bulma -->
-        <aside class="menu leftbar">
+        <aside class="menu has-background-dark has-text-white">
           <p class="menu-label">
             Notingham
           </p>
-          <ul class="menu-list">
+          <ul class="menu-list has-text-light">
             <li>
-              <a>Notes</a>
-              <div class="note-list">
+              <input type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
+              <div class="note-list has-text-white">
                 <ul>
-                    <li v-for="note,i in noteRefs" @click="selectedIdx = i"><a :class="{'is-active':note.active}">{{note.name}}</a></li>
+                    <li v-for="note,i in noteRefs" @click="selectedIdx = i"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
                 </ul>
               </div>
             </li>
