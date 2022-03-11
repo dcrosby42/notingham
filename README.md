@@ -1,6 +1,10 @@
 
 
-# Toast UI Editor Docs / links
+## Panzoom
+
+https://timmywil.com/panzoom/demo/
+
+## Toast UI Editor Docs / links
 
 API and Examples: https://nhn.github.io/tui.editor/latest/
 
@@ -9,7 +13,8 @@ Brief instructions for CDN use found here: https://www.npmjs.com/package/@toast-
 github https://github.com/nhn/tui.editor/
 
 
-## Commands
+
+### toast editor Commands
 
 App.editor.commandManager.mdCommands
 App.editor.commandManager.wwCommands

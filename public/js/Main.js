@@ -1,39 +1,88 @@
-// https://stackoverflow.com/questions/42872002/in-vue-js-component-how-to-use-props-in-css
-// https://vuetifyjs.com/en/getting-started/installation/#usage-with-cdn
+import MyEditor from "./MyEditor.js"
+
+function shortName(note) {
+    return _.last(note.id.split("/")).substring(0, 20)
+}
 export default {
-    data: function() {
+    data() {
         return {
-            zoom: 1.0,
-            zoomMin: 0.3,
-            zoomMax: 2,
+            loaded: false,
+            notes: null,
+            selectedIdx: -1,
         }
     },
+    async mounted() {
+        const resp = await fetch("/api/v1/notes")
+        this.notes = await resp.json()
+        this.loaded = true;
+        console.log(this.notes)
+    },
+    methods: {
+
+    },
     computed: {
-        cssProps() {
-            return {
-                '--zoom': this.zoom,
+        noteRefs() {
+            if (this.loaded) {
+                return this.notes.map((n, i) => {
+                    return {
+                        name: shortName(n),
+                        active: this.selectedIdx == i,
+                    }
+                })
+            } else {
+                return [];
+            }
+        },
+        selectedNote() {
+            if (this.loaded && this.selectedIdx >= 0) { // && this.selectedIdx < this.notes.length) {
+                return this.notes[this.selectedIdx]
+            }
+            return null;
+        },
+        currentContent: {
+            get() {
+                if (this.loaded && this.selectedIdx >= 0) { // && this.selectedIdx < this.notes.length) {
+                    return this.notes[this.selectedIdx].Content
+                } else {
+                    return ""
+                }
+            },
+            set(val) {
+                if (this.loaded && this.selectedIdx >= 0) { // && this.selectedIdx < this.notes.length) {
+                    return this.notes[this.selectedIdx].Content = val
+                }
             }
         }
     },
-    methods: {
-        eventme(e) {
-            console.log("e")
-            e.preventDefault()
-        },
-        handleScroll(e) {
-            this.zoom = _.clamp(this.zoom + e.deltaY * 0.01, this.zoomMin, this.zoomMax);
-        }
-    },
     template: `
-		<div class="section">
-			<div class="content main-header" :style="cssProps" @wheel.ctrl.prevent="handleScroll">
-				<h1>Main</h1>
-				<div class="row">
-					<button @click="zoom = zoom - 0.1" class="button">-</button>
-					<div>{{zoom.toFixed(2)}}</div>
-					<button @click="zoom = zoom + 0.1" class="button">+</button>
-				</div>
-			</div>
-		</div>
-	`
+    <div class="columns">
+      <div class="column is-one-fifth">
+        <!-- cribbed from https://stackoverflow.com/questions/63262296/how-to-get-a-fixed-sidebar-in-bulma -->
+        <aside class="menu leftbar">
+          <p class="menu-label">
+            Notingham
+          </p>
+          <ul class="menu-list">
+            <li>
+              <a>Notes</a>
+              <div class="note-list">
+                <ul>
+                    <li v-for="note,i in noteRefs" @click="selectedIdx = i"><a :class="{'is-active':note.active}">{{note.name}}</a></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </aside>
+      </div>
+
+      <div class="column">
+        <div class="block editor-home">
+          <MyEditor v-model="currentContent"/>
+        </div>
+      </div>
+    </div>
+  `,
+    components: {
+        MyEditor
+    }
 }

@@ -40,6 +40,8 @@ export const optionsMixin = {
             }
         });
 
+        console.log("optionsMixin this.initialEditType:", this.initialEditType)
+        console.log("optionsMixin data.computedOptins:", options)
         return { editor: null, computedOptions: options };
     },
     methods: {

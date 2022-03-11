@@ -32,10 +32,12 @@ export default {
     },
     mounted() {
         const options = {...this.computedOptions, el: this.$refs.toastuiEditor };
-
-        this.editor = new Editor(options);
+        this.editor = Vue.shallowRef(new Editor(options));
     },
     methods: {
+        setMarkdown(txt) {
+            this.editor.setMarkdown(txt)
+        },
         getRootElement() {
             return this.$refs.toastuiEditor;
         },

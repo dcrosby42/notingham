@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 
+	"github.com/dcrosby42/notingham/notedb"
 	"github.com/dcrosby42/notingham/site"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,16 @@ func Serve(config Config) error {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
+	})
+
+	noteDb := notedb.NoteDb{Dir: config.DataDir}
+	router.GET("/api/v1/notes", func(c *gin.Context) {
+		notes, err := noteDb.AllNoteFiles()
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(200, notes)
+		}
 	})
 
 	if config.Port == 0 {

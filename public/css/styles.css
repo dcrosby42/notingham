@@ -6,3 +6,22 @@
     display: flex;
     flex-direction: row;
 }
+
+body {}
+
+.editor-home {
+    height: 100%;
+    /* background-color: red; */
+}
+
+.leftbar {
+    /* border: solid 1px red;
+    background-color: #f99; */
+}
+
+.note-list {
+    height: 785px;
+    overflow: scroll;
+    /* border: solid 1px green;
+    background-color: #0f0 */
+}
