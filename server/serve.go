@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/dcrosby42/notingham/notedb"
 	"github.com/dcrosby42/notingham/site"
@@ -32,7 +33,7 @@ func Serve(config Config) error {
 		})
 	})
 
-	noteDb := notedb.NoteDb{Dir: config.DataDir}
+	noteDb := notedb.NotebookDir{Id: "nb1", Dir: config.DataDir}
 	router.GET("/api/v1/notes", func(c *gin.Context) {
 		notes, err := noteDb.AllNoteFiles()
 		if err != nil {
@@ -40,6 +41,21 @@ func Serve(config Config) error {
 		} else {
 			c.JSON(200, notes)
 		}
+	})
+	router.PUT("/api/v1/notes/:id", func(c *gin.Context) {
+		var update notedb.NoteContentUpdate
+		if err := c.ShouldBindJSON(&update); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		update.Id = c.Param("id")
+		update.NotebookId = "nb1"
+		if _, err := noteDb.UpdateNoteContent(update); err != nil {
+			fmt.Printf("!! UpdateNoteContent err=%s\n", err)
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{})
 	})
 
 	if config.Port == 0 {

@@ -11,7 +11,7 @@ func init() {
 	serverCmd.Flags().IntVar(&serverConfig.Port, "port", 9000, "server port to bind")
 	serverCmd.Flags().StringVar(&serverConfig.SiteDir, "site-dir", "", "in devel mode, the dir to serve static website assets from")
 	serverCmd.Flags().StringVar(&serverConfig.DataDir, "data-dir", "", "where notes and objects are stored on disk")
-	root.AddCommand(serverCmd)
+	Notingham.AddCommand(serverCmd)
 }
 
 var serverCmd = &cobra.Command{

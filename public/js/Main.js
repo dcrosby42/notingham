@@ -1,14 +1,31 @@
 import MyEditor from "./MyEditor.js"
 
-function shortName(note) {
-    return _.last(note.id.split("/")).substring(0, 20)
+const SAVE_DELAY = 1000
+
+function computeNoteName(note) {
+    let name = ""
+    const lines = note.content.split("\n");
+    if (lines.length > 0) {
+        let i = 0
+        do {
+            name = lines[i].replace(/[^A-Za-z0-0-_]+/, ' ').replace(/\s+/, ' ').trim()
+            i++
+        } while (i < lines.length && name === "")
+    }
+    if (name === "") {
+        name = "Untitled"
+    }
+    return name
 }
+
 export default {
     data() {
         return {
             loaded: false,
             notes: null,
             selectedIdx: -1,
+            changedNotes: new Map(),
+            searchString: "",
         }
     },
     async mounted() {
@@ -24,15 +41,44 @@ export default {
                 'has-background-dark': !note.active,
                 'is-active': note.active,
             }
-        }
-
+        },
+        trackChangedNote(note) {
+            this.changedNotes.set(note.id, note)
+            this.persistChangedNotes()
+        },
+        persistChangedNotes: _.debounce(function() {
+            this.changedNotes.forEach((note, id) => {
+                this.saveNote(note).then(
+                    () => this.changedNotes.delete(id))
+            })
+        }, SAVE_DELAY),
+        async saveNote(note) {
+            console.log(`Saving note ${note.name}...`)
+            const resp = await fetch(`/api/v1/notes/${note.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: note.content })
+            })
+            const rbody = await resp.json()
+            console.log(`Saved note ${note.name}`)
+        },
     },
     computed: {
+        filteredNotes() {
+            if (!this.loaded) {
+                return []
+            }
+            let notes = this.notes
+            if (this.searchString.length > 0) {
+                notes = _.filter(notes, note => note.name.toLowerCase().indexOf(this.searchString.toLowerCase()) >= 0);
+            }
+            return notes;
+        },
         noteRefs() {
             if (this.loaded) {
-                return this.notes.map((n, i) => {
+                return this.filteredNotes.map((note, i) => {
                     return {
-                        name: shortName(n),
+                        name: computeNoteName(note),
                         active: this.selectedIdx == i,
                     }
                 })
@@ -48,16 +94,21 @@ export default {
         },
         currentContent: {
             get() {
-                if (this.loaded && this.selectedIdx >= 0) { // && this.selectedIdx < this.notes.length) {
-                    return this.notes[this.selectedIdx].Content
+                if (this.selectedNote) {
+                    return this.selectedNote.content
                 } else {
                     return ""
                 }
             },
             set(val) {
-                if (this.loaded && this.selectedIdx >= 0) { // && this.selectedIdx < this.notes.length) {
-                    return this.notes[this.selectedIdx].Content = val
+                if (this.selectedNote) {
+                    if (this.selectedNote.content !== val) {
+                        this.selectedNote.content = val
+                        this.trackChangedNote(this.selectedNote)
+                    }
+                    return val
                 }
+                return null
             }
         }
     },
@@ -71,7 +122,7 @@ export default {
           </p>
           <ul class="menu-list has-text-light">
             <li>
-              <input type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
+              <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
               <div class="note-list has-text-white">
                 <ul>
                     <li v-for="note,i in noteRefs" @click="selectedIdx = i"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
