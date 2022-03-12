@@ -2,6 +2,19 @@ import MyEditor from "./MyEditor.js"
 
 const SAVE_DELAY = 1000
 
+let Search = null;
+
+function resetSearch(notes) {
+    Search = new FlexSearch.Document({
+        tokenize: "forward",
+        document: {
+            id: "id",
+            index: ["content"],
+        }
+    });
+    notes.forEach(note => Search.add(note))
+}
+
 function computeNoteName(note) {
     let name = ""
     const lines = note.content.split("\n");
@@ -23,7 +36,7 @@ export default {
         return {
             loaded: false,
             notes: null,
-            selectedIdx: -1,
+            selectedId: null,
             changedNotes: new Map(),
             searchString: "",
         }
@@ -31,8 +44,8 @@ export default {
     async mounted() {
         const resp = await fetch("/api/v1/notes")
         this.notes = await resp.json()
+        resetSearch(this.notes)
         this.loaded = true;
-        console.log(this.notes)
     },
     methods: {
         noteItemStyle(note) {
@@ -53,7 +66,6 @@ export default {
             })
         }, SAVE_DELAY),
         async saveNote(note) {
-            console.log(`Saving note ${note.name}...`)
             const resp = await fetch(`/api/v1/notes/${note.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -64,22 +76,34 @@ export default {
         },
     },
     computed: {
+        notesById() {
+            return _.keyBy(this.notes, "id")
+        },
         filteredNotes() {
             if (!this.loaded) {
                 return []
             }
             let notes = this.notes
             if (this.searchString.length > 0) {
-                notes = _.filter(notes, note => note.name.toLowerCase().indexOf(this.searchString.toLowerCase()) >= 0);
+                const res = Search.search(this.searchString)
+                if (res.length > 0) {
+                    notes = []
+                    res.forEach(r => {
+                        if (r && r.result) {
+                            notes = notes.concat(r.result.map(id => this.notesById[id]))
+                        }
+                    })
+                }
             }
             return notes;
         },
         noteRefs() {
             if (this.loaded) {
-                return this.filteredNotes.map((note, i) => {
+                return this.filteredNotes.map(note => {
                     return {
                         name: computeNoteName(note),
-                        active: this.selectedIdx == i,
+                        id: note.id,
+                        active: this.selectedId == note.id,
                     }
                 })
             } else {
@@ -87,8 +111,8 @@ export default {
             }
         },
         selectedNote() {
-            if (this.loaded && this.selectedIdx >= 0) { // && this.selectedIdx < this.notes.length) {
-                return this.notes[this.selectedIdx]
+            if (this.loaded && this.selectedId != null) {
+                return this.notesById[this.selectedId]
             }
             return null;
         },
@@ -125,7 +149,7 @@ export default {
               <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
               <div class="note-list has-text-white">
                 <ul>
-                    <li v-for="note,i in noteRefs" @click="selectedIdx = i"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                    <li v-for="note in noteRefs" @click="selectedId = note.id"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
                 </ul>
               </div>
             </li>
