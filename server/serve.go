@@ -33,7 +33,11 @@ func Serve(config Config) error {
 		})
 	})
 
-	noteDb := notedb.NotebookDir{Id: "nb1", Dir: config.DataDir}
+	noteDb := notedb.NotebookDir{NotebookId: "nb1", Dir: config.DataDir}
+	err := noteDb.Init()
+	if err != nil {
+		return err
+	}
 	router.GET("/api/v1/notes", func(c *gin.Context) {
 		notes, err := noteDb.AllNoteFiles()
 		if err != nil {
@@ -51,7 +55,20 @@ func Serve(config Config) error {
 		update.Id = c.Param("id")
 		update.NotebookId = "nb1"
 		if _, err := noteDb.UpdateNoteContent(update); err != nil {
-			fmt.Printf("!! UpdateNoteContent err=%s\n", err)
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{})
+	})
+	router.POST("/api/v1/notes", func(c *gin.Context) {
+		var update notedb.NoteContentUpdate
+		if err := c.ShouldBindJSON(&update); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		update.Id = c.Param("id")
+		update.NotebookId = "nb1"
+		if _, err := noteDb.UpdateNoteContent(update); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}

@@ -1,4 +1,5 @@
 import MyEditor from "./MyEditor.js"
+import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 
 const SAVE_DELAY = 1000
 
@@ -21,7 +22,7 @@ function computeNoteName(note) {
     if (lines.length > 0) {
         let i = 0
         do {
-            name = lines[i].replace(/[^A-Za-z0-0-_]+/, ' ').replace(/\s+/, ' ').trim()
+            name = lines[i].replace(/[^A-Za-z0-9-_]+/, ' ').replace(/\s+/, ' ').trim()
             i++
         } while (i < lines.length && name === "")
     }
@@ -61,19 +62,38 @@ export default {
         },
         persistChangedNotes: _.debounce(function() {
             this.changedNotes.forEach((note, id) => {
-                this.saveNote(note).then(
-                    () => this.changedNotes.delete(id))
+                this.saveNote(note).then(() => {
+                    this.changedNotes.delete(id)
+                    Search.update(note)
+                })
             })
         }, SAVE_DELAY),
         async saveNote(note) {
             const resp = await fetch(`/api/v1/notes/${note.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: note.content })
+                body: JSON.stringify(note)
             })
             const rbody = await resp.json()
             console.log(`Saved note ${note.name}`)
         },
+        async createNote(note) {
+            const resp = await fetch(`/api/v1/notes/${note.id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(note)
+            })
+            const rbody = await resp.json()
+            console.log(`Created note ${note.name}`)
+        },
+        newNote() {
+            console.log("new note")
+            const note = { id: uuidv4(), content: "A new note!" }
+            this.notes.push(note)
+            Search.add(note)
+            this.selectedId = note.id
+            this.createNote(note)
+        }
     },
     computed: {
         notesById() {
@@ -85,9 +105,9 @@ export default {
             }
             let notes = this.notes
             if (this.searchString.length > 0) {
+                notes = []
                 const res = Search.search(this.searchString)
                 if (res.length > 0) {
-                    notes = []
                     res.forEach(r => {
                         if (r && r.result) {
                             notes = notes.concat(r.result.map(id => this.notesById[id]))
@@ -146,6 +166,7 @@ export default {
           </p>
           <ul class="menu-list has-text-light">
             <li>
+              <button class="button is-small" @click="newNote">New</button>
               <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
               <div class="note-list has-text-white">
                 <ul>
