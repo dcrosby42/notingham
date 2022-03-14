@@ -11,6 +11,7 @@ import (
 )
 
 func Serve(config Config) error {
+	repo := notedb.NewFsNotebookRepo(config.DataDir)
 
 	router := gin.Default()
 
@@ -33,46 +34,48 @@ func Serve(config Config) error {
 		})
 	})
 
-	noteDb := notedb.NotebookDir{NotebookId: "nb1", Dir: config.DataDir}
-	err := noteDb.Init()
-	if err != nil {
-		return err
-	}
-	router.GET("/api/v1/notes", func(c *gin.Context) {
-		notes, err := noteDb.AllNoteFiles()
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-		} else {
-			c.JSON(200, notes)
+	router.GET("/api/v1/notebooks/:notebook/notes", func(c *gin.Context) {
+		var err error
+		notebook, err := repo.GetNotebook(c.Param("notebook"))
+		if err == nil {
+			notes, err := notebook.AllNotes()
+			fmt.Printf("AllNotes %#v\n", notes)
+			if err == nil {
+				c.JSON(200, notes)
+				return
+			}
 		}
+		c.JSON(500, gin.H{"error": err.Error()})
 	})
-	router.PUT("/api/v1/notes/:id", func(c *gin.Context) {
-		var update notedb.NoteContentUpdate
-		if err := c.ShouldBindJSON(&update); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+	router.POST("/api/v1/notebooks/:notebook/notes/:id", func(c *gin.Context) {
+		var err error
+		notebook, err := repo.GetNotebook(c.Param("notebook"))
+		if err == nil {
+			var update notedb.Note
+			if err := c.ShouldBindJSON(&update); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+			update.Id = c.Param("id")
+			_, err := notebook.SaveNote(update)
+			if err == nil {
+				c.JSON(200, gin.H{})
+				return
+			}
 		}
-		update.Id = c.Param("id")
-		update.NotebookId = "nb1"
-		if _, err := noteDb.UpdateNoteContent(update); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(200, gin.H{})
+		c.JSON(500, gin.H{"error": err.Error()})
 	})
-	router.POST("/api/v1/notes", func(c *gin.Context) {
-		var update notedb.NoteContentUpdate
-		if err := c.ShouldBindJSON(&update); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+	router.DELETE("/api/v1/notebook/:notebook/notes/:id", func(c *gin.Context) {
+		var err error
+		notebook, err := repo.GetNotebook(c.Param("notebook"))
+		if err == nil {
+			_, err := notebook.DeleteNote(c.Param("id"))
+			if err == nil {
+				c.JSON(200, gin.H{})
+				return
+			}
 		}
-		update.Id = c.Param("id")
-		update.NotebookId = "nb1"
-		if _, err := noteDb.UpdateNoteContent(update); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(200, gin.H{})
+		c.JSON(500, gin.H{"error": err.Error()})
 	})
 
 	if config.Port == 0 {

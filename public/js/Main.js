@@ -43,7 +43,7 @@ export default {
         }
     },
     async mounted() {
-        const resp = await fetch("/api/v1/notes")
+        const resp = await fetch("/api/v1/notebooks/Personal/notes")
         this.notes = await resp.json()
         resetSearch(this.notes)
         this.loaded = true;
@@ -69,30 +69,30 @@ export default {
             })
         }, SAVE_DELAY),
         async saveNote(note) {
-            const resp = await fetch(`/api/v1/notes/${note.id}`, {
-                method: "PUT",
+            const resp = await fetch(`/api/v1/notebooks/Personal/notes/${note.id}`, {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(note)
             })
             const rbody = await resp.json()
             console.log(`Saved note ${note.name}`)
         },
-        async createNote(note) {
-            const resp = await fetch(`/api/v1/notes/${note.id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(note)
-            })
-            const rbody = await resp.json()
-            console.log(`Created note ${note.name}`)
-        },
+        // async createNote(note) {
+        //     const resp = await fetch(`/api/v1/notebooks/Personal/notes/${note.id}`, {
+        //         method: "POST",
+        //         headers: { "Content-Type": "application/json" },
+        //         body: JSON.stringify(note)
+        //     })
+        //     const rbody = await resp.json()
+        //     console.log(`Created note ${note.name}`)
+        // },
         newNote() {
             console.log("new note")
             const note = { id: uuidv4(), content: "A new note!" }
             this.notes.push(note)
             Search.add(note)
             this.selectedId = note.id
-            this.createNote(note)
+            this.saveNote(note)
         }
     },
     computed: {
