@@ -12,28 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
-type FsNotebookRepo struct {
-	Dir       string
-	Notebooks map[string]Notebook
-}
-
-func NewFsNotebookRepo(dir string) Repo {
-	return &FsNotebookRepo{
-		Dir:       dir,
-		Notebooks: make(map[string]Notebook),
-	}
-}
-func (me *FsNotebookRepo) GetNotebook(id string) (Notebook, error) {
-	notebook, found := me.Notebooks[id]
-	if !found {
-		notebook, err := NewFsNotebook(filepath.Join(me.Dir, id))
-		if err != nil {
-			return nil, err
-		}
-		fmt.Printf("Loaded FsNotebook %v\n", id)
-		me.Notebooks[id] = notebook
-	}
-	return notebook, nil
+func NoteId() string {
+	return uuid.New().String()
 }
 
 type FsNotebook struct {
@@ -45,19 +25,19 @@ type FsNotebook struct {
 func NewFsNotebook(dir string) (*FsNotebook, error) {
 	nb := &FsNotebook{Dir: dir}
 	var err error
-	os.MkdirAll(filepath.Join(dir, "docs"), 0755)
+	os.MkdirAll(filepath.Join(dir, "notes"), 0755)
 	os.MkdirAll(filepath.Join(dir, "objects"), 0755)
 	os.MkdirAll(filepath.Join(dir, "assets"), 0755)
 	os.MkdirAll(filepath.Join(dir, "trash"), 0755)
-	err = nb.LoadPathIds()
+	err = nb.loadPathIds()
 	if err != nil {
 		return nil, err
 	}
-	err = nb.LoadNotes()
+	err = nb.loadNotes()
 	if err != nil {
 		return nil, err
 	}
-	err = nb.SavePathIds()
+	err = nb.savePathIds()
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +45,11 @@ func NewFsNotebook(dir string) (*FsNotebook, error) {
 }
 
 func (me *FsNotebook) AllNotes() ([]Note, error) {
-	return nil, nil
+	ret := make([]Note, 0, len(me.notes))
+	for _, note := range me.notes {
+		ret = append(ret, *note)
+	}
+	return ret, nil
 }
 
 func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
@@ -79,7 +63,7 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 		note = &incoming
 		if note.Id == "" {
 			// needs an ID
-			note.Id = uuid.New().String()
+			note.Id = NoteId()
 		}
 	}
 	me.notes[note.Id] = note
@@ -90,14 +74,15 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 		path := note.Id + ".md"
 		pathId = &PathId{Path: path, Id: note.Id}
 		me.pathIds = append(me.pathIds, *pathId)
-		// persist to disk
-		if err := me.SavePathIds(); err != nil {
+		// persist path ids to disk
+		if err := me.savePathIds(); err != nil {
 			return Note{}, err
 		}
 	}
 
 	// Write the file
-	err := ioutil.WriteFile(pathId.Path, []byte(note.Content), 0644)
+	fname := filepath.Join(me.Dir, "notes", pathId.Path)
+	err := ioutil.WriteFile(fname, []byte(note.Content), 0644)
 	if err != nil {
 		return Note{}, err
 	}
@@ -122,7 +107,7 @@ func (me *FsNotebook) DeleteNote(id string) (Note, error) {
 		me.pathIds = a[:len(a)-1]
 
 		// persist path-id index to disk
-		if err := me.SavePathIds(); err != nil {
+		if err := me.savePathIds(); err != nil {
 			return Note{}, err
 		}
 
@@ -140,7 +125,7 @@ func (me *FsNotebook) pathIdsFile() string {
 	return filepath.Join(me.Dir, "_note_ids.json")
 }
 
-func (me *FsNotebook) LoadPathIds() error {
+func (me *FsNotebook) loadPathIds() error {
 	if util.FileExists(me.pathIdsFile()) {
 		bytes, err := ioutil.ReadFile(me.pathIdsFile())
 		if err != nil {
@@ -153,7 +138,7 @@ func (me *FsNotebook) LoadPathIds() error {
 	return nil
 }
 
-func (me *FsNotebook) SavePathIds() error {
+func (me *FsNotebook) savePathIds() error {
 	bytes, err := json.Marshal(me.pathIds)
 	if err != nil {
 		return err
@@ -163,7 +148,7 @@ func (me *FsNotebook) SavePathIds() error {
 
 var NoteFilePattern = regexp.MustCompile(`.md$`)
 
-func (me *FsNotebook) LoadNotes() error {
+func (me *FsNotebook) loadNotes() error {
 	me.notes = make(map[string]*Note)
 	return filepath.Walk(me.Dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -174,12 +159,13 @@ func (me *FsNotebook) LoadNotes() error {
 			// get or make an id
 			pathId := me.pathIds.LookupByPath(path)
 			if pathId == nil {
-				newPathId := PathId{Path: path, Id: uuid.New().String()}
+				newPathId := PathId{Path: path, Id: NoteId()}
 				me.pathIds = append(me.pathIds, newPathId)
 				pathId = &newPathId
 			}
-			// make Note
-			data, err := ioutil.ReadFile(path)
+			// load Note
+			fname := filepath.Join(me.Dir, "notes", path)
+			data, err := ioutil.ReadFile(fname)
 			if err != nil {
 				return err
 			}

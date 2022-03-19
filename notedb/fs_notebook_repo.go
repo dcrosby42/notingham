@@ -1,0 +1,30 @@
+package notedb
+
+import (
+	"fmt"
+	"path/filepath"
+)
+
+type FsNotebookRepo struct {
+	Dir       string
+	Notebooks map[string]Notebook
+}
+
+func NewFsNotebookRepo(dir string) Repo {
+	return &FsNotebookRepo{
+		Dir:       dir,
+		Notebooks: make(map[string]Notebook),
+	}
+}
+func (me *FsNotebookRepo) GetNotebook(id string) (Notebook, error) {
+	notebook, found := me.Notebooks[id]
+	if !found {
+		notebook, err := NewFsNotebook(filepath.Join(me.Dir, id))
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("Loaded FsNotebook %v\n", id)
+		me.Notebooks[id] = notebook
+	}
+	return notebook, nil
+}
