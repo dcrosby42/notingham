@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/dcrosby42/notingham/server"
 	"github.com/spf13/cobra"
 )
@@ -8,7 +12,8 @@ import (
 var serverConfig server.Config
 
 func init() {
-	serverCmd.Flags().IntVar(&serverConfig.Port, "port", 9000, "server port to bind")
+	serverCmd.Flags().IntVar(&serverConfig.BindPort, "port", 9000, "server port to bind")
+	serverCmd.Flags().StringVar(&serverConfig.BindHost, "host", "127.0.0.1", "server host/ip to bind")
 	serverCmd.Flags().StringVar(&serverConfig.SiteDir, "site-dir", "", "in devel mode, the dir to serve static website assets from")
 	serverCmd.Flags().StringVar(&serverConfig.DataDir, "data-dir", "", "where notes and objects are stored on disk")
 	Notingham.AddCommand(serverCmd)
@@ -21,6 +26,9 @@ var serverCmd = &cobra.Command{
 		if err := serverConfig.Validate(); err != nil {
 			return err
 		}
-		return server.Serve(serverConfig)
+		serverConfig.BindHost = "127.0.0.1"
+		done := make(chan os.Signal, 1)
+		signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		return server.Serve(serverConfig, done)
 	},
 }

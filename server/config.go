@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	DataDir string
-	Port    int
-	SiteDir string
+	DataDir  string
+	BindHost string
+	BindPort int
+	SiteDir  string
 }
 
 func (config *Config) Validate() error {
@@ -23,6 +24,9 @@ func (config *Config) Validate() error {
 		if !util.DirExists(config.DataDir) {
 			return fmt.Errorf("SiteDir %q doesn't exist", config.SiteDir)
 		}
+	}
+	if config.BindHost == "" {
+		config.BindHost = "0.0.0.0"
 	}
 	return nil
 }

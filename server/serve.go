@@ -1,8 +1,12 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/dcrosby42/notingham/notedb"
 	"github.com/dcrosby42/notingham/site"
@@ -10,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Serve(config Config) error {
+func Serve(config Config, done chan os.Signal) error {
 	repo := notedb.NewFsNotebookRepo(config.DataDir)
 
 	router := gin.Default()
@@ -78,10 +82,37 @@ func Serve(config Config) error {
 		c.JSON(500, gin.H{"error": err.Error()})
 	})
 
-	if config.Port == 0 {
-		config.Port = 9000
-	}
-	router.Run(fmt.Sprintf("0.0.0.0:%v", config.Port)) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	//
+	// Start a server w graceful shutdown
+	//
 
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%v", config.BindHost, config.BindPort),
+		Handler: router,
+	}
+
+	// Start listening in a goroutine:
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("ListenAndServe err: %s\n", err)
+		}
+	}()
+	log.Printf("Server Started: %s", srv.Addr)
+
+	// Block on shutdown signal
+	<-done
+	log.Print("Server Shutdown requested")
+
+	// Ask server to shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		// extra handling here
+		cancel()
+	}()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
+
+	log.Print("Server Exited")
 	return nil
 }
