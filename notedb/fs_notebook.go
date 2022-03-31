@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/dcrosby42/notingham/util"
 	"github.com/google/uuid"
@@ -44,6 +45,14 @@ func NewFsNotebook(dir string) (*FsNotebook, error) {
 	return nb, nil
 }
 
+func (me *FsNotebook) NotesDir() string {
+	return filepath.Join(me.Dir, "notes")
+}
+
+func (me *FsNotebook) RelativePath(path string) string {
+	return strings.TrimPrefix(path, me.Dir)[1:]
+}
+
 func (me *FsNotebook) AllNotes() ([]Note, error) {
 	ret := make([]Note, 0, len(me.notes))
 	for _, note := range me.notes {
@@ -71,7 +80,7 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	// Square up with the path-id mappings:
 	_, pathId := me.pathIds.LookupById(note.Id)
 	if pathId == nil {
-		path := note.Id + ".md"
+		path := "notes/" + note.Id + ".md"
 		pathId = &PathId{Path: path, Id: note.Id}
 		me.pathIds = append(me.pathIds, *pathId)
 		// persist path ids to disk
@@ -81,7 +90,7 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	}
 
 	// Write the file
-	fname := filepath.Join(me.Dir, "notes", pathId.Path)
+	fname := filepath.Join(me.Dir, pathId.Path)
 	err := ioutil.WriteFile(fname, []byte(note.Content), 0644)
 	if err != nil {
 		return Note{}, err
@@ -150,22 +159,22 @@ var NoteFilePattern = regexp.MustCompile(`.md$`)
 
 func (me *FsNotebook) loadNotes() error {
 	me.notes = make(map[string]*Note)
-	return filepath.Walk(me.Dir, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(me.NotesDir(), func(fullPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
-		if !info.IsDir() && NoteFilePattern.MatchString(path) {
+		file := me.RelativePath(fullPath)
+		if !info.IsDir() && NoteFilePattern.MatchString(file) {
 			// get or make an id
-			pathId := me.pathIds.LookupByPath(path)
+			pathId := me.pathIds.LookupByPath(file)
 			if pathId == nil {
-				newPathId := PathId{Path: path, Id: NoteId()}
+				newPathId := PathId{Path: file, Id: NoteId()}
 				me.pathIds = append(me.pathIds, newPathId)
 				pathId = &newPathId
 			}
 			// load Note
-			fname := filepath.Join(me.Dir, "notes", path)
-			data, err := ioutil.ReadFile(fname)
+			data, err := ioutil.ReadFile(fullPath)
 			if err != nil {
 				return err
 			}

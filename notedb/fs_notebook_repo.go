@@ -19,7 +19,8 @@ func NewFsNotebookRepo(dir string) Repo {
 func (me *FsNotebookRepo) GetNotebook(id string) (Notebook, error) {
 	notebook, found := me.Notebooks[id]
 	if !found {
-		notebook, err := NewFsNotebook(filepath.Join(me.Dir, id))
+		var err error
+		notebook, err = NewFsNotebook(filepath.Join(me.Dir, id))
 		if err != nil {
 			return nil, err
 		}
