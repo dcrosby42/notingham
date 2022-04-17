@@ -105,7 +105,6 @@ func (me *FsNotebook) DeleteNote(id string) (Note, error) {
 	if found {
 		delete(me.notes, id)
 	}
-	me.notes[note.Id] = note
 
 	// Remove from path id mappings
 	i, pathId := me.pathIds.LookupById(note.Id)
@@ -121,8 +120,13 @@ func (me *FsNotebook) DeleteNote(id string) (Note, error) {
 		}
 
 		// Trash the file
+		err := os.MkdirAll(filepath.Join(me.Dir, "trash"), 0755)
+		if err != nil {
+			return Note{}, err
+		}
+		originalFname := filepath.Join(me.Dir, pathId.Path)
 		trashedFilename := filepath.Join(me.Dir, "trash", filepath.Base(pathId.Path))
-		err := os.Rename(pathId.Path, trashedFilename)
+		err = os.Rename(originalFname, trashedFilename)
 		if err != nil {
 			return Note{}, err
 		}

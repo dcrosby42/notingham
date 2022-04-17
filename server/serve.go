@@ -38,6 +38,7 @@ func Serve(config Config, done chan os.Signal) error {
 		})
 	})
 
+	// Fetch all notes
 	router.GET("/api/v1/notebooks/:notebook/notes", func(c *gin.Context) {
 		var err error
 		notebook, err := repo.GetNotebook(c.Param("notebook"))
@@ -51,6 +52,8 @@ func Serve(config Config, done chan os.Signal) error {
 		}
 		c.JSON(500, gin.H{"error": err.Error()})
 	})
+
+	// Create or update existing note
 	router.POST("/api/v1/notebooks/:notebook/notes/:id", func(c *gin.Context) {
 		var err error
 		notebook, err := repo.GetNotebook(c.Param("notebook"))
@@ -69,11 +72,13 @@ func Serve(config Config, done chan os.Signal) error {
 		}
 		c.JSON(500, gin.H{"error": err.Error()})
 	})
-	router.DELETE("/api/v1/notebook/:notebook/notes/:id", func(c *gin.Context) {
+
+	// Delete note
+	router.DELETE("/api/v1/notebooks/:notebook/notes/:id", func(c *gin.Context) {
 		var err error
 		notebook, err := repo.GetNotebook(c.Param("notebook"))
 		if err == nil {
-			_, err := notebook.DeleteNote(c.Param("id"))
+			_, err = notebook.DeleteNote(c.Param("id"))
 			if err == nil {
 				c.JSON(200, gin.H{})
 				return
