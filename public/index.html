@@ -10,7 +10,12 @@
         crossorigin="anonymous" referrerpolicy="no&#45;referrer"></script>
     <script src="https://rawcdn.githack.com/nextapps-de/flexsearch/0.7.2/dist/flexsearch.bundle.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="css/clippy.css">
     <link rel="stylesheet" href="css/styles.css">
+
+    <script src="https://code.jquery.com/jquery-1.7.0.min.js"
+        integrity="sha256-/05Jde9AMAT4/o5ZAI23rUf1SxDYTHLrkOco0eyRV84=" crossorigin="anonymous"></script>
+    <script src="./js/clippy.js"></script>
 
     <!-- 
         Brief instructions https://www.npmjs.com/package/@toast-ui/editor  
@@ -30,6 +35,17 @@
     <script type="module">
         import Main from "./js/Main.js"
         Vue.createApp(Main).mount('#app');
+
+
+        function loadClippyAgent(name = "Clippy") {
+            return Promise.new(r => {
+                clippy.load(name, function (agent) { agents.Rover = agent })
+            })
+        }
+        clippy.load('Rover', function (agent) { agents.Rover = agent })
+        clippy.load('Links', function (agent) { agents.Links = agent })
+        clippy.load('Wizard', function (agent) { agents.Wizard = agent })
+        clippy.load('Clippy', function (agent) { agents.Clippy = agent })
     </script>
 </body>
 
