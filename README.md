@@ -1,4 +1,5 @@
 
+# References
 
 ## Panzoom
 
@@ -12,7 +13,9 @@ Brief instructions for CDN use found here: https://www.npmjs.com/package/@toast-
 
 github https://github.com/nhn/tui.editor/
 
+## Key binding stuff
 
+Add Keyboard Shortcuts to your Vue App -- https://focusedlabs.io/blog/add-keyboard-shortcuts-to-your-vue-app
 
 ### toast editor Commands
 
@@ -121,3 +124,12 @@ dist
 https://pkg.go.dev/github.com/jessevdk/go-assets
 
 go get -u github.com/jessevdk/go-assets-builder
+
+# Attributions
+
+
+```
+favicon
+https://www.iconfinder.com/icons/1291754/notes_todo_notepad_notebook_icon
+https://favicon.io/favicon-converter/
+```

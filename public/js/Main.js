@@ -42,6 +42,11 @@ export default {
             searchString: "",
         }
     },
+    created() {
+        window.addEventListener("keydown", this.handleKeydown)
+        window.addEventListener("keyup", this.handleKeyup)
+        window.addEventListener("keypress", this.handleKeypress)
+    },
     async mounted() {
         const resp = await fetch("/api/v1/notebooks/Personal/notes")
         this.notes = await resp.json()
@@ -60,7 +65,7 @@ export default {
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
         },
-        persistChangedNotes: _.debounce(function() {
+        persistChangedNotes: _.debounce(function () {
             this.changedNotes.forEach((note, id) => {
                 this.saveNote(note).then(() => {
                     this.changedNotes.delete(id)
@@ -93,7 +98,23 @@ export default {
             Search.add(note)
             this.selectedId = note.id
             this.saveNote(note)
-        }
+        },
+
+        handleKeydown(e) {
+            // console.log(e.key, e.metaKey)
+            if (e.key === "g" && e.metaKey) {
+                console.log("Hi!", e)
+                e.preventDefault()
+            }
+
+            // console.log("keydown:", e)
+        },
+        handleKeyup(e) {
+            // console.log("keyup:", e)
+        },
+        handleKeypress(e) {
+            // console.log("keypress:", e)
+        },
     },
     computed: {
         notesById() {
@@ -166,8 +187,17 @@ export default {
           </p>
           <ul class="menu-list has-text-light">
             <li>
+              <!--
+              "New" button
+              -->
               <button class="button is-small" @click="newNote">New</button>
+              <!--
+              Search box
+              -->
               <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
+              <!--
+              Note list
+              -->
               <div class="note-list has-text-white">
                 <ul>
                     <li v-for="note in noteRefs" @click="selectedId = note.id"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
