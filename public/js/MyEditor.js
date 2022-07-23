@@ -6,7 +6,10 @@ const { Editor } = toastui;
 
 // MyEditor
 export default {
-    props: ["modelValue"],
+    props: {
+        modelValue: { type: String, required: true },
+        height: { type: String, default: "100%", required: false }
+    },
     data() {
         return {
             options: {
@@ -37,18 +40,19 @@ export default {
         handleChange(editorMode) {
             const content = this.$refs.editor.editor.getMarkdown()
             this.$emit("update:modelValue", content)
-                // console.log(this.$refs.editor.editor.getMarkdown())
+            // console.log(this.$refs.editor.editor.getMarkdown())
         }
     },
     template: `
-      <div style="height: 100%">
+      <!-- <div style="height: 100%"> -->
+      <div style="">
           <VueEditor 
             ref="editor" 
-            height="100%" 
             previewStyle="tab" 
             initialEditType="wysiwyg" 
             :initialValue="modelValue" 
             @change="handleChange"
+            :height="height" 
             :options="options" />
       </div>
     `,

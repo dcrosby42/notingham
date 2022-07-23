@@ -40,6 +40,7 @@ export default {
             selectedId: null,
             changedNotes: new Map(),
             searchString: "",
+            leftbarState: "showing"
         }
     },
     created() {
@@ -99,11 +100,29 @@ export default {
             this.selectedId = note.id
             this.saveNote(note)
         },
-
+        cycleLeftbarState() {
+            const states = ["showing", "large", "hidden"]
+            let i = states.indexOf(this.leftbarState) + 1
+            if (i >= states.length) {
+                i = 0
+            }
+            this.leftbarState = states[i]
+        },
+        toggleLeftbarShowing() {
+            if (this.leftbarState == "hidden") {
+                this.leftbarState = "showing"
+            } else {
+                this.leftbarState = "hidden"
+            }
+        },
         handleKeydown(e) {
             // console.log(e.key, e.metaKey)
-            if (e.key === "g" && e.metaKey) {
-                console.log("Hi!", e)
+            if (e.key === "1" && e.metaKey) {
+                if (e.shiftKey) {
+                    this.leftbarState = "large"
+                } else {
+                    this.toggleLeftbarShowing()
+                }
                 e.preventDefault()
             }
 
@@ -175,44 +194,37 @@ export default {
                 }
                 return null
             }
+        },
+        rootStyles() {
+            return {
+                "leftbar-hidden": this.leftbarState == "hidden",
+                "leftbar-large": this.leftbarState == "large",
+            }
         }
     },
     template: `
-    <div class="columns">
-      <div class="column is-one-fifth">
-        <!-- cribbed from https://stackoverflow.com/questions/63262296/how-to-get-a-fixed-sidebar-in-bulma -->
-        <aside class="menu has-background-dark has-text-white">
+    <div class="notingham-root simple-editor-grid" :class="rootStyles">
+      <!-- LEFT BAR -->
+      <div class="simple-editor-grid--leftbar">
           <p class="menu-label">
             Notingham
           </p>
-          <ul class="menu-list has-text-light">
-            <li>
-              <!--
-              "New" button
-              -->
-              <button class="button is-small" @click="newNote">New</button>
-              <!--
-              Search box
-              -->
-              <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
-              <!--
-              Note list
-              -->
-              <div class="note-list has-text-white">
-                <ul>
-                    <li v-for="note in noteRefs" @click="selectedId = note.id"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
-                </ul>
-              </div>
-            </li>
-          </ul>
-        </aside>
+          <!-- "New" button -->
+          <button class="button is-small" @click="newNote">New</button>
+
+          <!-- Search box -->
+          <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
+
+          <!-- Note list -->
+          <div class="has-text-white" style="overflow: auto">
+            <ul style="overflow:auto">
+                <li v-for="note in noteRefs" @click="selectedId = note.id" style="padding:5px;"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+            </ul>
+          </div>
       </div>
 
-      <div class="column">
-        <div class="block editor-home">
-          <MyEditor v-model="currentContent"/>
-        </div>
-      </div>
+      <!-- MAIN CONTENT -->
+      <MyEditor v-model="currentContent"/>
     </div>
   `,
     components: {

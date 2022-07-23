@@ -1,32 +1,28 @@
-.main-header {
-    zoom: var(--zoom);
+.darkmode {
+  background-color: black;
+  color: white;
 }
 
-.row {
-    display: flex;
-    flex-direction: row;
+.notingham-root {
+  width: 100vw;
+  height: 100vh;
 }
 
-body {}
-
-body.darkmode {
-    background-color: black;
-    color: white;
+.simple-editor-grid {
+  display: grid;
+  grid-template-columns: 20% 1fr;
 }
 
-.editor-home {
-    height: 100%;
-    /* background-color: red; */
+.simple-editor-grid.leftbar-hidden {
+  grid-template-columns: 0% 1fr;
 }
 
-.leftbar {
-    /* border: solid 1px red;
-    background-color: #f99; */
+.simple-editor-grid.leftbar-large {
+  grid-template-columns: 35% 1fr;
 }
 
-.note-list {
-    height: 800px;
-    overflow: scroll;
-    /* border: solid 1px green;
-    background-color: #0f0 */
+.simple-editor-grid--leftbar {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  overflow: auto
 }

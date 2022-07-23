@@ -1,0 +1,8 @@
+.main-header {
+  zoom: var(--zoom);
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
