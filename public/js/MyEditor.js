@@ -8,16 +8,11 @@ const { Editor } = toastui;
 export default {
     props: {
         modelValue: { type: String, required: true },
-        height: { type: String, default: "100%", required: false }
+        height: { type: String, default: "100%", required: false },
+        darkMode: { type: Boolean, default: true, required: false }
     },
     data() {
         return {
-            options: {
-                theme: "dark",
-                // plugins: [uml]
-            },
-            // content: "# CAP Triage",
-            editor: null,
         }
     },
     created() {
@@ -25,14 +20,12 @@ export default {
     },
     updated() {
         // console.log("updated", this.modelValue)
-        // this.editor.setMarkdown("crap")
         const e = this.$refs.editor.editor
         if (e.getMarkdown() != this.modelValue) {
             e.setMarkdown(this.modelValue, false)
         }
     },
     mounted() {
-        // this.editor = this.$refs.editor; //.editor
         // window.Editor = this.$refs.editor.editor
         // window.Editor = this.$refs.editor.getRootElement()
     },
@@ -43,9 +36,17 @@ export default {
             // console.log(this.$refs.editor.editor.getMarkdown())
         }
     },
+    computed: {
+        options() {
+            const opts = {}
+            if (this.darkMode) {
+                opts.theme = "dark"
+            }
+            return opts
+        }
+    },
     template: `
-      <!-- <div style="height: 100%"> -->
-      <div style="">
+      <div>
           <VueEditor 
             ref="editor" 
             previewStyle="tab" 

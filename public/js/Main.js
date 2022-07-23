@@ -5,6 +5,55 @@ const SAVE_DELAY = 1000
 
 let Search = null;
 
+class NotesApi {
+    async getAll() {
+        const resp = await fetch("/api/v1/notebooks/Personal/notes")
+        const notes = await resp.json()
+        return notes
+    }
+}
+class ObjectStorage {
+    constructor(storage) {
+        this.storage = storage
+    }
+    set(key, obj) {
+        this.storage.setItem(key, JSON.stringify(obj))
+    }
+    get(key) {
+        const strVal = this.storage.getItem(key)
+        if (strVal) {
+            return JSON.parse(strVal)
+        }
+        return null
+    }
+    remove(key) {
+        this.storage.removeItem(key)
+    }
+    clear() {
+        this.storage.clear()
+    }
+}
+class PrefsApi {
+    constructor() {
+        this._storage = new ObjectStorage(window.localStorage)
+        // this._darkMode = false
+    }
+    get darkMode() {
+        console.log("get darkmode", this._darkMode)
+        return this._storage.get("prefs.darkMode")
+    }
+    set darkMode(val) {
+        console.log("set darkmode", val)
+        this._storage.set("prefs.darkMode", val)
+        return val
+    }
+}
+
+const Data = {
+    Notes: new NotesApi(),
+    Prefs: new PrefsApi(),
+}
+
 function resetSearch(notes) {
     Search = new FlexSearch.Document({
         tokenize: "forward",
@@ -40,7 +89,8 @@ export default {
             selectedId: null,
             changedNotes: new Map(),
             searchString: "",
-            leftbarState: "showing"
+            leftbarState: "showing",
+            darkMode: Data.Prefs.darkMode,
         }
     },
     created() {
@@ -49,16 +99,15 @@ export default {
         window.addEventListener("keypress", this.handleKeypress)
     },
     async mounted() {
-        const resp = await fetch("/api/v1/notebooks/Personal/notes")
-        this.notes = await resp.json()
+        this.notes = await Data.Notes.getAll()
         resetSearch(this.notes)
         this.loaded = true;
     },
     methods: {
         noteItemStyle(note) {
             return {
-                'has-text-light': true,
-                'has-background-dark': !note.active,
+                'has-text-light': this.darkMode,
+                'has-background-dark': this.darkMode && !note.active,
                 'is-active': note.active,
             }
         },
@@ -83,17 +132,7 @@ export default {
             const rbody = await resp.json()
             console.log(`Saved note ${note.name}`)
         },
-        // async createNote(note) {
-        //     const resp = await fetch(`/api/v1/notebooks/Personal/notes/${note.id}`, {
-        //         method: "POST",
-        //         headers: { "Content-Type": "application/json" },
-        //         body: JSON.stringify(note)
-        //     })
-        //     const rbody = await resp.json()
-        //     console.log(`Created note ${note.name}`)
-        // },
         newNote() {
-            console.log("new note")
             const note = { id: uuidv4(), content: "A new note!" }
             this.notes.push(note)
             Search.add(note)
@@ -115,6 +154,10 @@ export default {
                 this.leftbarState = "hidden"
             }
         },
+        toggleDarkMode() {
+            this.darkMode = !this.darkMode
+            Data.Prefs.darkMode = this.darkMode
+        },
         handleKeydown(e) {
             // console.log(e.key, e.metaKey)
             if (e.key === "1" && e.metaKey) {
@@ -123,6 +166,10 @@ export default {
                 } else {
                     this.toggleLeftbarShowing()
                 }
+                e.preventDefault()
+            }
+            if (e.key === "2" && e.metaKey) {
+                this.toggleDarkMode()
                 e.preventDefault()
             }
 
@@ -200,10 +247,16 @@ export default {
                 "leftbar-hidden": this.leftbarState == "hidden",
                 "leftbar-large": this.leftbarState == "large",
             }
+        },
+        darkModeStyles() {
+            return {
+                "has-background-dark": this.darkMode,
+                "has-text-white": this.darkMode,
+            }
         }
     },
     template: `
-    <div class="notingham-root simple-editor-grid" :class="rootStyles">
+    <div class="notingham-root simple-editor-grid" :class="[rootStyles, darkModeStyles]">
       <!-- LEFT BAR -->
       <div class="simple-editor-grid--leftbar">
           <p class="menu-label">
@@ -213,10 +266,10 @@ export default {
           <button class="button is-small" @click="newNote">New</button>
 
           <!-- Search box -->
-          <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small has-background-dark has-text-white">
+          <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small" :class="darkModeStyles">
 
           <!-- Note list -->
-          <div class="has-text-white" style="overflow: auto">
+          <div :class="darkModeStyles" style="overflow: auto">
             <ul style="overflow:auto">
                 <li v-for="note in noteRefs" @click="selectedId = note.id" style="padding:5px;"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
             </ul>
@@ -224,7 +277,7 @@ export default {
       </div>
 
       <!-- MAIN CONTENT -->
-      <MyEditor v-model="currentContent"/>
+      <MyEditor v-model="currentContent" :darkMode="darkMode" />
     </div>
   `,
     components: {
