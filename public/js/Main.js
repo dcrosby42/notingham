@@ -71,7 +71,7 @@ function computeNoteName(note) {
     if (lines.length > 0) {
         let i = 0
         do {
-            name = lines[i].replace(/[^A-Za-z0-9-_]+/, ' ').replace(/\s+/, ' ').trim()
+            name = lines[i].replace(/[^A-Za-z0-9-_]+/g, ' ').replace(/\s+/, ' ').trim()
             i++
         } while (i < lines.length && name === "")
     }
@@ -102,6 +102,22 @@ export default {
         this.notes = await Data.Notes.getAll()
         resetSearch(this.notes)
         this.loaded = true;
+
+        tinykeys(window, {
+            "$mod+KeyK KeyT": () => {
+                this.toggleDarkMode()
+            }
+            // "Shift+D": () => {
+            //     alert("The 'Shift' and 'd' keys were pressed at the same time")
+            // },
+            // "y e e t": () => {
+            //     alert("The keys 'y', 'e', 'e', and 't' were pressed in order")
+            // },
+            // "$mod+KeyD": () => {
+            //     alert("Either 'Control+d' or 'Meta+d' were pressed")
+            // },
+        })
+
     },
     methods: {
         noteItemStyle(note) {
@@ -167,9 +183,11 @@ export default {
                     this.toggleLeftbarShowing()
                 }
                 e.preventDefault()
-            }
-            if (e.key === "2" && e.metaKey) {
+            } else if (e.key === "2" && e.metaKey) {
                 this.toggleDarkMode()
+                e.preventDefault()
+            } else if (e.key === "n" && e.metaKey) {
+                e.newNote()
                 e.preventDefault()
             }
 

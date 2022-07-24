@@ -3,7 +3,7 @@ import { optionsMixin } from './optionsMixin.js';
 
 export default {
     name: 'ToastuiEditor',
-    template: `<div ref="toastuiEditor"></div>`,
+    template: `<div ref="toastuiEditor" :derp="options.theme=='dark'"></div>`,
     mixins: [optionsMixin],
     props: {
         previewStyle: {
@@ -31,7 +31,7 @@ export default {
         },
     },
     mounted() {
-        const options = {...this.computedOptions, el: this.$refs.toastuiEditor };
+        const options = { ...this.computedOptions, el: this.$refs.toastuiEditor };
         this.editor = Vue.shallowRef(new Editor(options));
     },
     methods: {

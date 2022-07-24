@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/spikes.css">
 
+  <script src="js/vendor/tinykeys.umd.js"></script>
+
   <!-- 
         Brief instructions https://www.npmjs.com/package/@toast-ui/editor  
     -->
@@ -28,6 +30,7 @@
 <body class="darkmode">
   <div id="app"></div>
   <script type="module">
+    window.tinykeys = tinykeys.tinykeys
     import Main from "./js/Main.js"
     Vue.createApp(Main).mount('#app');
   </script>

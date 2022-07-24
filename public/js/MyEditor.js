@@ -1,4 +1,4 @@
-import VueEditor from "./vue-editor/VueEditor.js"
+import VueEditor from "./vendor/vue-editor/VueEditor.js"
 
 const { Editor } = toastui;
 // const { uml } = Editor.plugin
@@ -16,7 +16,7 @@ export default {
         }
     },
     created() {
-        window.App = this;
+        // window.App = this;
     },
     updated() {
         // console.log("updated", this.modelValue)
@@ -42,6 +42,7 @@ export default {
             if (this.darkMode) {
                 opts.theme = "dark"
             }
+            console.log("MyEditor: recomputed opts", opts)
             return opts
         }
     },
