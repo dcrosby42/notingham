@@ -39,11 +39,9 @@ class PrefsApi {
         // this._darkMode = false
     }
     get darkMode() {
-        console.log("get darkmode", this._darkMode)
         return this._storage.get("prefs.darkMode")
     }
     set darkMode(val) {
-        console.log("set darkmode", val)
         this._storage.set("prefs.darkMode", val)
         return val
     }
@@ -91,12 +89,8 @@ export default {
             searchString: "",
             leftbarState: "showing",
             darkMode: Data.Prefs.darkMode,
+            toolbarVisible: true,
         }
-    },
-    created() {
-        window.addEventListener("keydown", this.handleKeydown)
-        window.addEventListener("keyup", this.handleKeyup)
-        window.addEventListener("keypress", this.handleKeypress)
     },
     async mounted() {
         this.notes = await Data.Notes.getAll()
@@ -104,18 +98,14 @@ export default {
         this.loaded = true;
 
         tinykeys(window, {
-            "$mod+KeyK KeyT": () => {
+            "$mod+KeyK KeyT": (e) => {
                 this.toggleDarkMode()
+                e.preventDefault()
+            },
+            "$mod+KeyK KeyY": (e) => {
+                this.toolbarVisible = !this.toolbarVisible
+                e.preventDefault()
             }
-            // "Shift+D": () => {
-            //     alert("The 'Shift' and 'd' keys were pressed at the same time")
-            // },
-            // "y e e t": () => {
-            //     alert("The keys 'y', 'e', 'e', and 't' were pressed in order")
-            // },
-            // "$mod+KeyD": () => {
-            //     alert("Either 'Control+d' or 'Meta+d' were pressed")
-            // },
         })
 
     },
@@ -173,31 +163,6 @@ export default {
         toggleDarkMode() {
             this.darkMode = !this.darkMode
             Data.Prefs.darkMode = this.darkMode
-        },
-        handleKeydown(e) {
-            // console.log(e.key, e.metaKey)
-            if (e.key === "1" && e.metaKey) {
-                if (e.shiftKey) {
-                    this.leftbarState = "large"
-                } else {
-                    this.toggleLeftbarShowing()
-                }
-                e.preventDefault()
-            } else if (e.key === "2" && e.metaKey) {
-                this.toggleDarkMode()
-                e.preventDefault()
-            } else if (e.key === "n" && e.metaKey) {
-                e.newNote()
-                e.preventDefault()
-            }
-
-            // console.log("keydown:", e)
-        },
-        handleKeyup(e) {
-            // console.log("keyup:", e)
-        },
-        handleKeypress(e) {
-            // console.log("keypress:", e)
         },
     },
     computed: {
@@ -295,7 +260,7 @@ export default {
       </div>
 
       <!-- MAIN CONTENT -->
-      <MyEditor v-model="currentContent" :darkMode="darkMode" />
+      <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
     </div>
   `,
     components: {

@@ -9,7 +9,8 @@ export default {
     props: {
         modelValue: { type: String, required: true },
         height: { type: String, default: "100%", required: false },
-        darkMode: { type: Boolean, default: true, required: false }
+        darkMode: { type: Boolean, default: true, required: false },
+        toolbarVisible: { type: Boolean, default: true, required: false },
     },
     data() {
         return {
@@ -42,7 +43,6 @@ export default {
             if (this.darkMode) {
                 opts.theme = "dark"
             }
-            console.log("MyEditor: recomputed opts", opts)
             return opts
         }
     },
@@ -55,6 +55,7 @@ export default {
             :initialValue="modelValue" 
             @change="handleChange"
             :height="height" 
+            :toolbarVisible="toolbarVisible"
             :options="options" />
       </div>
     `,
