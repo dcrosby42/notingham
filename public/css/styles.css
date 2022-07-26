@@ -25,3 +25,13 @@
   grid-template-rows: auto auto auto 1fr;
   overflow: auto
 }
+
+/*
+BOARD SPIKE
+*/
+
+.board-spike-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}

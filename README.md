@@ -133,3 +133,6 @@ favicon
 https://www.iconfinder.com/icons/1291754/notes_todo_notepad_notebook_icon
 https://favicon.io/favicon-converter/
 ```
+
+# CSS Grid
+https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout/Basic_Concepts_of_Grid_Layout
