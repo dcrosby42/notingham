@@ -1,6 +1,8 @@
 import MyEditor from "./MyEditor.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 
+Window = window
+
 const SAVE_DELAY = 1000
 
 let Search = null;
@@ -90,6 +92,7 @@ export default {
             leftbarState: "showing",
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
+            commandPaletteShowing: false,
         }
     },
     async mounted() {
@@ -99,6 +102,14 @@ export default {
 
         tinykeys(window, {
             // "Control+KeyK KeyT": (e) => {
+            "Alt+KeyP": (e) => {
+                this.openCommandPalette()
+                e.preventDefault()
+            },
+            "Escape": (e) => {
+                this.closeCommandPalette()
+                e.preventDefault()
+            },
             "Alt+KeyT": (e) => {
                 this.toggleDarkMode()
                 e.preventDefault()
@@ -172,6 +183,22 @@ export default {
         toggleDarkMode() {
             this.darkMode = !this.darkMode
             Data.Prefs.darkMode = this.darkMode
+        },
+        openCommandPalette() {
+            if (!this.commandPaletteShowing) {
+                this.commandPaletteShowing = true
+                this.$nextTick(function () {
+                    this.focusCommandInput()
+                })
+            }
+        },
+        closeCommandPalette() {
+            this.commandPaletteShowing = false
+        },
+        focusCommandInput() {
+            if (this.commandPaletteShowing && this.$refs.commandInput) {
+                this.$refs.commandInput.focus()
+            }
         },
     },
     computed: {
@@ -270,6 +297,11 @@ export default {
 
       <!-- MAIN CONTENT -->
       <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
+
+      <div id="deleteme" ref="dur">dur</div>
+      <div v-if="commandPaletteShowing" class="command-palette" ref="wha">
+        <input class="command-input" placeholder="Command Palette" ref="commandInput">
+      </div>
     </div>
   `,
     components: {

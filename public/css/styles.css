@@ -25,3 +25,16 @@
   grid-template-rows: auto auto auto 1fr;
   overflow: auto
 }
+
+.command-palette {
+  position: fixed;
+  /* top: 50%; */
+  top: 0px;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, 0%);
+}
+.command-palette .command-input {
+  font-size: 1.5em;
+  width: 50vw;
+}
