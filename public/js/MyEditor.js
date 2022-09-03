@@ -1,4 +1,4 @@
-import VueEditor from "./vendor/vue-editor/VueEditor.js"
+import VueEditor from "./vendor/toastui-editor-vue/VueEditor.js"
 
 const { Editor } = toastui;
 // const { uml } = Editor.plugin
