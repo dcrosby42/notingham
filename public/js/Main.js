@@ -98,12 +98,21 @@ export default {
         this.loaded = true;
 
         tinykeys(window, {
-            "$mod+KeyK KeyT": (e) => {
+            // "Control+KeyK KeyT": (e) => {
+            "Alt+KeyT": (e) => {
                 this.toggleDarkMode()
                 e.preventDefault()
             },
-            "$mod+KeyK KeyY": (e) => {
+            "Alt+KeyY": (e) => {
                 this.toolbarVisible = !this.toolbarVisible
+                e.preventDefault()
+            },
+            "Alt+KeyB": (e) => {
+                this.toggleLeftbarShowing()
+                e.preventDefault()
+            },
+            "Shift+Alt+KeyB": (e) => {
+                this.cycleLeftbarState()
                 e.preventDefault()
             }
         })
