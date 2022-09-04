@@ -33,8 +33,10 @@
   left: 50%;
   /* bring your own prefixes */
   transform: translate(-50%, 0%);
+  width: 700px;
+  background: white;
 }
 .command-palette .command-input {
   font-size: 1.5em;
-  width: 50vw;
+  width: 100%;
 }

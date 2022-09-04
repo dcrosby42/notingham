@@ -1,7 +1,6 @@
 import MyEditor from "./MyEditor.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
-
-Window = window
+import {CommandPalette,CommandPaletteModel} from "./CommandPalette.js"
 
 const SAVE_DELAY = 1000
 
@@ -93,6 +92,7 @@ export default {
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
             commandPaletteShowing: false,
+            commandPaletteModel: CommandPaletteModel.init(),
         }
     },
     async mounted() {
@@ -101,7 +101,6 @@ export default {
         this.loaded = true;
 
         tinykeys(window, {
-            // "Control+KeyK KeyT": (e) => {
             "Alt+KeyP": (e) => {
                 this.openCommandPalette()
                 e.preventDefault()
@@ -298,13 +297,11 @@ export default {
       <!-- MAIN CONTENT -->
       <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
 
-      <div id="deleteme" ref="dur">dur</div>
-      <div v-if="commandPaletteShowing" class="command-palette" ref="wha">
-        <input class="command-input" placeholder="Command Palette" ref="commandInput">
-      </div>
+      <CommandPalette v-model="commandPaletteModel" v-if="commandPaletteShowing"/>
     </div>
   `,
     components: {
-        MyEditor
+        MyEditor,
+        CommandPalette,
     }
 }
