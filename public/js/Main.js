@@ -1,4 +1,5 @@
 import MyEditor from "./MyEditor.js"
+import Data from "./Data.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import {CommandPalette,CommandPaletteModel} from "./CommandPalette.js"
 
@@ -6,52 +7,6 @@ const SAVE_DELAY = 1000
 
 let Search = null;
 
-class NotesApi {
-    async getAll() {
-        const resp = await fetch("/api/v1/notebooks/Personal/notes")
-        const notes = await resp.json()
-        return notes
-    }
-}
-class ObjectStorage {
-    constructor(storage) {
-        this.storage = storage
-    }
-    set(key, obj) {
-        this.storage.setItem(key, JSON.stringify(obj))
-    }
-    get(key) {
-        const strVal = this.storage.getItem(key)
-        if (strVal) {
-            return JSON.parse(strVal)
-        }
-        return null
-    }
-    remove(key) {
-        this.storage.removeItem(key)
-    }
-    clear() {
-        this.storage.clear()
-    }
-}
-class PrefsApi {
-    constructor() {
-        this._storage = new ObjectStorage(window.localStorage)
-        // this._darkMode = false
-    }
-    get darkMode() {
-        return this._storage.get("prefs.darkMode")
-    }
-    set darkMode(val) {
-        this._storage.set("prefs.darkMode", val)
-        return val
-    }
-}
-
-const Data = {
-    Notes: new NotesApi(),
-    Prefs: new PrefsApi(),
-}
 
 function resetSearch(notes) {
     Search = new FlexSearch.Document({
@@ -128,6 +83,12 @@ export default {
         })
 
     },
+    watch: {
+        "commandPaletteModel.input": function(cpm) {
+            console.log("watch cpm",cpm)
+
+        }
+    },
     methods: {
         noteItemStyle(note) {
             return {
@@ -187,17 +148,16 @@ export default {
             if (!this.commandPaletteShowing) {
                 this.commandPaletteShowing = true
                 this.$nextTick(function () {
-                    this.focusCommandInput()
+                    if (this.$refs.commandPalette) {
+                        this.$refs.commandPalette.focus()
+                    } else {
+                        console.log("can't focus command palette")
+                    }
                 })
             }
         },
         closeCommandPalette() {
             this.commandPaletteShowing = false
-        },
-        focusCommandInput() {
-            if (this.commandPaletteShowing && this.$refs.commandInput) {
-                this.$refs.commandInput.focus()
-            }
         },
     },
     computed: {
@@ -274,7 +234,9 @@ export default {
         }
     },
     template: `
-    <div class="notingham-root simple-editor-grid" :class="[rootStyles, darkModeStyles]">
+    <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, darkModeStyles]">
+
+      
       <!-- LEFT BAR -->
       <div class="simple-editor-grid--leftbar">
           <p class="menu-label">
@@ -294,10 +256,15 @@ export default {
           </div>
       </div>
 
+
       <!-- MAIN CONTENT -->
       <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
 
-      <CommandPalette v-model="commandPaletteModel" v-if="commandPaletteShowing"/>
+      <CommandPalette v-if="commandPaletteShowing"
+        v-model="commandPaletteModel" 
+        ref="commandPalette" 
+      />
+
     </div>
   `,
     components: {
