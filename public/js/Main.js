@@ -1,12 +1,46 @@
 import MyEditor from "./MyEditor.js"
 import Data from "./Data.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
-import {CommandPalette,CommandPaletteModel} from "./CommandPalette.js"
+import { CommandPalette, CommandPaletteModel } from "./CommandPalette.js"
 
 const SAVE_DELAY = 1000
 
-let Search = null;
+class NoteSearcher {
+    constructor(notes) {
+        this.notes = notes
+        this.notesById = _.keyBy(this.notes, "id")
+        this._reset()
+    }
+    search(str) {
+        if (!str || str.length === 0) {
+            return [...this.notes]
+        } else {
+            const searchRes = this.searchModel.search(str)
+            return _(searchRes)
+                .flatMap(sr => sr.result.map(id => this.notesById[id]))
+                .value()
+        }
+    }
+    getText(note) {
+        return note.name
+    }
+    getKind(note) {
+        return "note"
+    }
 
+    _reset() {
+        this.searchModel = new FlexSearch.Document({
+            tokenize: "forward",
+            document: {
+                id: "id",
+                index: ["content"],
+            }
+        });
+        this.notes.forEach(n => this.searchModel.add(n))
+    }
+}
+
+let Search = null;
 
 function resetSearch(notes) {
     Search = new FlexSearch.Document({
@@ -17,22 +51,6 @@ function resetSearch(notes) {
         }
     });
     notes.forEach(note => Search.add(note))
-}
-
-function computeNoteName(note) {
-    let name = ""
-    const lines = note.content.split("\n");
-    if (lines.length > 0) {
-        let i = 0
-        do {
-            name = lines[i].replace(/[^A-Za-z0-9-_]+/g, ' ').replace(/\s+/, ' ').trim()
-            i++
-        } while (i < lines.length && name === "")
-    }
-    if (name === "") {
-        name = "Untitled"
-    }
-    return name
 }
 
 export default {
@@ -47,11 +65,18 @@ export default {
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
             commandPaletteShowing: false,
-            commandPaletteModel: CommandPaletteModel.init(),
+            noteSearcher: null,
+            // commandPaletteModel: CommandPaletteModel.init(),
         }
+    },
+    created() {
+        this.persistChangedNotes = _.debounce(this._persistChangedNotes, SAVE_DELAY)
     },
     async mounted() {
         this.notes = await Data.Notes.getAll()
+        this.noteSearcher = new NoteSearcher(this.notes)
+        // this.commandPaletteModel.notes = this.notes
+        // this.commandPaletteModel.commands = this.commands
         resetSearch(this.notes)
         this.loaded = true;
 
@@ -84,10 +109,9 @@ export default {
 
     },
     watch: {
-        "commandPaletteModel.input": function(cpm) {
-            console.log("watch cpm",cpm)
-
-        }
+        // "commandPaletteModel.input": function(cpm) {
+        //     console.log("watch cpm",cpm)
+        // }
     },
     methods: {
         noteItemStyle(note) {
@@ -101,22 +125,16 @@ export default {
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
         },
-        persistChangedNotes: _.debounce(function () {
+        _persistChangedNotes() {
             this.changedNotes.forEach((note, id) => {
                 this.saveNote(note).then(() => {
                     this.changedNotes.delete(id)
                     Search.update(note)
                 })
             })
-        }, SAVE_DELAY),
+        },
         async saveNote(note) {
-            const resp = await fetch(`/api/v1/notebooks/Personal/notes/${note.id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(note)
-            })
-            const rbody = await resp.json()
-            console.log(`Saved note ${note.name}`)
+            await Data.Notes.save(note)
         },
         newNote() {
             const note = { id: uuidv4(), content: "A new note!" }
@@ -159,6 +177,12 @@ export default {
         closeCommandPalette() {
             this.commandPaletteShowing = false
         },
+        commandPaletteSelection(choice) {
+            this.closeCommandPalette()
+            if (choice.kind === "note") {
+                this.selectedId = choice.data.id
+            }
+        },
     },
     computed: {
         notesById() {
@@ -186,7 +210,7 @@ export default {
             if (this.loaded) {
                 return this.filteredNotes.map(note => {
                     return {
-                        name: computeNoteName(note),
+                        name: note.name,
                         id: note.id,
                         active: this.selectedId == note.id,
                     }
@@ -261,7 +285,8 @@ export default {
       <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
 
       <CommandPalette v-if="commandPaletteShowing"
-        v-model="commandPaletteModel" 
+        :searcher="noteSearcher"
+        @chosen="commandPaletteSelection"
         ref="commandPalette" 
       />
 

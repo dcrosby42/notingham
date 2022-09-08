@@ -1,6 +1,11 @@
 
 # References
 
+## Vue3 Compositon API
+
+https://vuejs.org/guide/extras/composition-api-faq.html
+
+
 ## Panzoom
 
 https://timmywil.com/panzoom/demo/

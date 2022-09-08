@@ -40,7 +40,11 @@
   font-size: 1.5em;
   width: 100%;
 }
-.command-palette .select-highlight {
+.command-palette .choice-highlight {
   color: white;
   background-color: #66B;
+}
+
+.is-active {
+  background: #66b;
 }
