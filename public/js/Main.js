@@ -22,10 +22,18 @@ class NoteSearcher {
         }
     }
     getText(note) {
-        return note.name
+        if (note) {
+            return note.name
+        }
     }
     getKind(note) {
         return "note"
+    }
+    add(item) {
+        this.searchModel.add(item)
+    }
+    update(item) {
+        this.searchModel.update(item)
     }
 
     _reset() {
@@ -40,18 +48,19 @@ class NoteSearcher {
     }
 }
 
-let Search = null;
+// DELETEME
+// let Search = null;
 
-function resetSearch(notes) {
-    Search = new FlexSearch.Document({
-        tokenize: "forward",
-        document: {
-            id: "id",
-            index: ["content"],
-        }
-    });
-    notes.forEach(note => Search.add(note))
-}
+// function resetSearch(notes) {
+//     Search = new FlexSearch.Document({
+//         tokenize: "forward",
+//         document: {
+//             id: "id",
+//             index: ["content"],
+//         }
+//     });
+//     notes.forEach(note => Search.add(note))
+// }
 
 export default {
     data() {
@@ -61,12 +70,11 @@ export default {
             selectedId: null,
             changedNotes: new Map(),
             searchString: "",
-            leftbarState: "showing",
+            leftbarState: "hidden",
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
             commandPaletteShowing: false,
             noteSearcher: null,
-            // commandPaletteModel: CommandPaletteModel.init(),
         }
     },
     created() {
@@ -74,10 +82,8 @@ export default {
     },
     async mounted() {
         this.notes = await Data.Notes.getAll()
-        this.noteSearcher = new NoteSearcher(this.notes)
-        // this.commandPaletteModel.notes = this.notes
-        // this.commandPaletteModel.commands = this.commands
-        resetSearch(this.notes)
+        this.noteSearcher = Vue.shallowRef(new NoteSearcher(this.notes))
+        // resetSearch(this.notes) // DELETEME
         this.loaded = true;
 
         tinykeys(window, {
@@ -109,6 +115,7 @@ export default {
 
     },
     watch: {
+        // DELETEME
         // "commandPaletteModel.input": function(cpm) {
         //     console.log("watch cpm",cpm)
         // }
@@ -129,7 +136,7 @@ export default {
             this.changedNotes.forEach((note, id) => {
                 this.saveNote(note).then(() => {
                     this.changedNotes.delete(id)
-                    Search.update(note)
+                    this.noteSearcher.update(note)
                 })
             })
         },
@@ -139,7 +146,7 @@ export default {
         newNote() {
             const note = { id: uuidv4(), content: "A new note!" }
             this.notes.push(note)
-            Search.add(note)
+            this.noteSearcher.add(note)
             this.selectedId = note.id
             this.saveNote(note)
         },
@@ -194,15 +201,7 @@ export default {
             }
             let notes = this.notes
             if (this.searchString.length > 0) {
-                notes = []
-                const res = Search.search(this.searchString)
-                if (res.length > 0) {
-                    res.forEach(r => {
-                        if (r && r.result) {
-                            notes = notes.concat(r.result.map(id => this.notesById[id]))
-                        }
-                    })
-                }
+                return this.noteSearcher.search(this.searchString)
             }
             return notes;
         },
