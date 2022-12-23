@@ -1,5 +1,6 @@
 module github.com/dcrosby42/notingham
 
+
 go 1.15
 
 require (
