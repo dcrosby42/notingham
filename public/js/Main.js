@@ -95,7 +95,7 @@ export default {
                 this.closeCommandPalette()
                 e.preventDefault()
             },
-            "Alt+KeyT": (e) => {
+            "Alt+KeyD": (e) => {
                 this.toggleDarkMode()
                 e.preventDefault()
             },
