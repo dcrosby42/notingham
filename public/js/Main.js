@@ -1,83 +1,66 @@
 import MyEditor from "./MyEditor.js"
+import Data from "./Data.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
+import { CommandPalette, CommandPaletteModel } from "./CommandPalette.js"
 
 const SAVE_DELAY = 1000
 
-let Search = null;
-
-class NotesApi {
-    async getAll() {
-        const resp = await fetch("/api/v1/notebooks/Personal/notes")
-        const notes = await resp.json()
-        return notes
+class NoteSearcher {
+    constructor(notes) {
+        this.notes = notes
+        this.notesById = _.keyBy(this.notes, "id")
+        this._reset()
     }
-}
-class ObjectStorage {
-    constructor(storage) {
-        this.storage = storage
-    }
-    set(key, obj) {
-        this.storage.setItem(key, JSON.stringify(obj))
-    }
-    get(key) {
-        const strVal = this.storage.getItem(key)
-        if (strVal) {
-            return JSON.parse(strVal)
+    search(str) {
+        if (!str || str.length === 0) {
+            return [...this.notes]
+        } else {
+            const searchRes = this.searchModel.search(str)
+            return _(searchRes)
+                .flatMap(sr => sr.result.map(id => this.notesById[id]))
+                .value()
         }
-        return null
     }
-    remove(key) {
-        this.storage.removeItem(key)
-    }
-    clear() {
-        this.storage.clear()
-    }
-}
-class PrefsApi {
-    constructor() {
-        this._storage = new ObjectStorage(window.localStorage)
-        // this._darkMode = false
-    }
-    get darkMode() {
-        return this._storage.get("prefs.darkMode")
-    }
-    set darkMode(val) {
-        this._storage.set("prefs.darkMode", val)
-        return val
-    }
-}
-
-const Data = {
-    Notes: new NotesApi(),
-    Prefs: new PrefsApi(),
-}
-
-function resetSearch(notes) {
-    Search = new FlexSearch.Document({
-        tokenize: "forward",
-        document: {
-            id: "id",
-            index: ["content"],
+    getText(note) {
+        if (note) {
+            return note.name
         }
-    });
-    notes.forEach(note => Search.add(note))
+    }
+    getKind(note) {
+        return "note"
+    }
+    add(item) {
+        this.searchModel.add(item)
+    }
+    update(item) {
+        this.searchModel.update(item)
+    }
+
+    _reset() {
+        this.searchModel = new FlexSearch.Document({
+            tokenize: "forward",
+            document: {
+                id: "id",
+                index: ["content"],
+            }
+        });
+        this.notes.forEach(n => this.searchModel.add(n))
+    }
 }
 
-function computeNoteName(note) {
-    let name = ""
-    const lines = note.content.split("\n");
-    if (lines.length > 0) {
-        let i = 0
-        do {
-            name = lines[i].replace(/[^A-Za-z0-9-_]+/g, ' ').replace(/\s+/, ' ').trim()
-            i++
-        } while (i < lines.length && name === "")
-    }
-    if (name === "") {
-        name = "Untitled"
-    }
-    return name
-}
+// DELETEME
+// let Search = null;
+
+// function resetSearch(notes) {
+//     Search = new FlexSearch.Document({
+//         tokenize: "forward",
+//         document: {
+//             id: "id",
+//             index: ["content"],
+//         }
+//     });
+//     notes.forEach(note => Search.add(note))
+// }
 
 export default {
     data() {
@@ -87,19 +70,32 @@ export default {
             selectedId: null,
             changedNotes: new Map(),
             searchString: "",
-            leftbarState: "showing",
+            leftbarState: "hidden",
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
+            commandPaletteShowing: false,
+            noteSearcher: null,
         }
+    },
+    created() {
+        this.persistChangedNotes = _.debounce(this._persistChangedNotes, SAVE_DELAY)
     },
     async mounted() {
         this.notes = await Data.Notes.getAll()
-        resetSearch(this.notes)
+        this.noteSearcher = Vue.shallowRef(new NoteSearcher(this.notes))
+        // resetSearch(this.notes) // DELETEME
         this.loaded = true;
 
         tinykeys(window, {
-            // "Control+KeyK KeyT": (e) => {
-            "Alt+KeyT": (e) => {
+            "Alt+KeyP": (e) => {
+                this.openCommandPalette()
+                e.preventDefault()
+            },
+            "Escape": (e) => {
+                this.closeCommandPalette()
+                e.preventDefault()
+            },
+            "Alt+KeyD": (e) => {
                 this.toggleDarkMode()
                 e.preventDefault()
             },
@@ -118,6 +114,12 @@ export default {
         })
 
     },
+    watch: {
+        // DELETEME
+        // "commandPaletteModel.input": function(cpm) {
+        //     console.log("watch cpm",cpm)
+        // }
+    },
     methods: {
         noteItemStyle(note) {
             return {
@@ -130,27 +132,21 @@ export default {
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
         },
-        persistChangedNotes: _.debounce(function () {
+        _persistChangedNotes() {
             this.changedNotes.forEach((note, id) => {
                 this.saveNote(note).then(() => {
                     this.changedNotes.delete(id)
-                    Search.update(note)
+                    this.noteSearcher.update(note)
                 })
             })
-        }, SAVE_DELAY),
+        },
         async saveNote(note) {
-            const resp = await fetch(`/api/v1/notebooks/Personal/notes/${note.id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(note)
-            })
-            const rbody = await resp.json()
-            console.log(`Saved note ${note.name}`)
+            await Data.Notes.save(note)
         },
         newNote() {
             const note = { id: uuidv4(), content: "A new note!" }
             this.notes.push(note)
-            Search.add(note)
+            this.noteSearcher.add(note)
             this.selectedId = note.id
             this.saveNote(note)
         },
@@ -173,6 +169,27 @@ export default {
             this.darkMode = !this.darkMode
             Data.Prefs.darkMode = this.darkMode
         },
+        openCommandPalette() {
+            if (!this.commandPaletteShowing) {
+                this.commandPaletteShowing = true
+                this.$nextTick(function () {
+                    if (this.$refs.commandPalette) {
+                        this.$refs.commandPalette.focus()
+                    } else {
+                        console.log("can't focus command palette")
+                    }
+                })
+            }
+        },
+        closeCommandPalette() {
+            this.commandPaletteShowing = false
+        },
+        commandPaletteSelection(choice) {
+            this.closeCommandPalette()
+            if (choice.kind === "note") {
+                this.selectedId = choice.data.id
+            }
+        },
     },
     computed: {
         notesById() {
@@ -184,15 +201,7 @@ export default {
             }
             let notes = this.notes
             if (this.searchString.length > 0) {
-                notes = []
-                const res = Search.search(this.searchString)
-                if (res.length > 0) {
-                    res.forEach(r => {
-                        if (r && r.result) {
-                            notes = notes.concat(r.result.map(id => this.notesById[id]))
-                        }
-                    })
-                }
+                return this.noteSearcher.search(this.searchString)
             }
             return notes;
         },
@@ -200,7 +209,7 @@ export default {
             if (this.loaded) {
                 return this.filteredNotes.map(note => {
                     return {
-                        name: computeNoteName(note),
+                        name: note.name,
                         id: note.id,
                         active: this.selectedId == note.id,
                     }
@@ -248,7 +257,9 @@ export default {
         }
     },
     template: `
-    <div class="notingham-root simple-editor-grid" :class="[rootStyles, darkModeStyles]">
+    <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, darkModeStyles]">
+
+      
       <!-- LEFT BAR -->
       <div class="simple-editor-grid--leftbar">
           <p class="menu-label">
@@ -268,11 +279,20 @@ export default {
           </div>
       </div>
 
+
       <!-- MAIN CONTENT -->
       <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
+
+      <CommandPalette v-if="commandPaletteShowing"
+        :searcher="noteSearcher"
+        @chosen="commandPaletteSelection"
+        ref="commandPalette" 
+      />
+
     </div>
   `,
     components: {
-        MyEditor
+        MyEditor,
+        CommandPalette,
     }
 }
