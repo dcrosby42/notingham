@@ -80,7 +80,10 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	// Square up with the path-id mappings:
 	_, pathId := me.pathIds.LookupById(note.Id)
 	if pathId == nil {
-		path := "notes/" + note.Id + ".md"
+		path, err := computeFilePath(note, me.Dir)
+		if err != nil {
+			return Note{}, err
+		}
 		pathId = &PathId{Path: path, Id: note.Id}
 		me.pathIds = append(me.pathIds, *pathId)
 		// persist path ids to disk
