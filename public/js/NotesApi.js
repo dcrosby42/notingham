@@ -1,6 +1,9 @@
 class NotesApi {
+    notebook() {
+        return "Netskope"
+    }
     async getAll() {
-        const resp = await fetch("/api/v1/notebooks/Personal/notes")
+        const resp = await fetch(`/api/v1/notebooks/${this.notebook()}/notes`)
         const notes = await resp.json()
         notes.forEach(note => {
             note.type = "note"
@@ -9,7 +12,7 @@ class NotesApi {
         return notes
     }
     async save(note) {
-        const resp = await fetch(`/api/v1/notebooks/Personal/notes/${note.id}`, {
+        const resp = await fetch(`/api/v1/notebooks/${this.notebook()}/notes/${note.id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: note.id, content: note.content })
