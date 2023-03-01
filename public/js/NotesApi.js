@@ -4,7 +4,7 @@ class NotesApi {
         const notes = await resp.json()
         notes.forEach(note => {
             note.type = "note"
-            note.name = computeNoteName(note)
+            this.updateNoteName(note)
         })
         return notes
     }
@@ -18,20 +18,26 @@ class NotesApi {
         // ? rbody
     }
 
-}
-function computeNoteName(note) {
-    let name = ""
-    const lines = note.content.split("\n");
-    if (lines.length > 0) {
-        let i = 0
-        do {
-            name = lines[i].replace(/[^A-Za-z0-9-_]+/g, ' ').replace(/\s+/, ' ').trim()
-            i++
-        } while (i < lines.length && name === "")
+    updateNoteName(note) {
+        if (note && note.content) {
+            note.name = this.computeNoteTitle(note.content)
+        }
     }
-    if (name === "") {
-        name = "Untitled"
+
+    computeNoteTitle(content = "") {
+        let name = ""
+        const lines = content.split("\n");
+        if (lines.length > 0) {
+            let i = 0
+            do {
+                name = lines[i].replace(/[^A-Za-z0-9-_]+/g, ' ').replace(/\s+/, ' ').trim()
+                i++
+            } while (i < lines.length && name === "")
+        }
+        if (name === "") {
+            name = "Untitled"
+        }
+        return name
     }
-    return name
 }
 export default NotesApi

@@ -29,11 +29,12 @@ class NoteSearcher {
     getKind(note) {
         return "note"
     }
-    add(item) {
-        this.searchModel.add(item)
+    add(note) {
+        this.searchModel.add(note)
+        this.notesById[note.id] = note
     }
-    update(item) {
-        this.searchModel.update(item)
+    update(note) {
+        this.searchModel.update(note)
     }
 
     _reset() {
@@ -70,7 +71,7 @@ export default {
             selectedId: null,
             changedNotes: new Map(),
             searchString: "",
-            leftbarState: "hidden",
+            leftbarState: "showing",
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
             commandPaletteShowing: false,
@@ -129,6 +130,9 @@ export default {
             }
         },
         trackChangedNote(note) {
+            Data.Notes.updateNoteName(this.selectedNote)
+            this.noteSearcher.update(note)
+            // deferred persistence:
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
         },
@@ -136,7 +140,6 @@ export default {
             this.changedNotes.forEach((note, id) => {
                 this.saveNote(note).then(() => {
                     this.changedNotes.delete(id)
-                    this.noteSearcher.update(note)
                 })
             })
         },
@@ -145,10 +148,13 @@ export default {
         },
         newNote() {
             const note = { id: uuidv4(), content: "A new note!" }
-            this.notes.push(note)
+            Data.Notes.updateNoteName(note)
             this.noteSearcher.add(note)
+            this.notes.push(note)
             this.selectedId = note.id
-            this.saveNote(note)
+            // deferred persistence:
+            this.changedNotes.set(note.id, note)
+            this.persistChangedNotes()
         },
         cycleLeftbarState() {
             const states = ["showing", "large", "hidden"]
@@ -201,7 +207,15 @@ export default {
             }
             let notes = this.notes
             if (this.searchString.length > 0) {
-                return this.noteSearcher.search(this.searchString)
+                const sres = this.noteSearcher.search(this.searchString)
+                // deleteme
+                for (let i = 0; i < sres.length; i++) {
+                    const element = sres[i];
+                    if (_.isUndefined(element)) {
+                        console.log(`filteredNotes search='${this.searchString}': search result ${i} is undefined? sres=`, sres)
+                    }
+                }
+                return sres
             }
             return notes;
         },
@@ -209,8 +223,9 @@ export default {
             if (this.loaded) {
                 return this.filteredNotes.map(note => {
                     return {
-                        name: note.name,
-                        id: note.id,
+                        note,
+                        // name: note.name,
+                        // id: note.id,
                         active: this.selectedId == note.id,
                     }
                 })
@@ -274,7 +289,7 @@ export default {
           <!-- Note list -->
           <div :class="darkModeStyles" style="overflow: auto">
             <ul style="overflow:auto">
-                <li v-for="note in noteRefs" @click="selectedId = note.id" style="padding:5px;"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                <li v-for="ref in noteRefs" @click="selectedId = ref.note.id" style="padding:5px;"><a :class="noteItemStyle(ref)">{{ref.note.name}}</a></li>
             </ul>
           </div>
       </div>
