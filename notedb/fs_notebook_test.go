@@ -82,6 +82,7 @@ func Test_NewFsNotebook_AllNotes_from_disk(t *testing.T) {
 
 	// Instantiate a new notebook vs. the existing dir:
 	notebook, err = NewFsNotebook(dir)
+	Assert(t).That(err, IsNil())
 
 	// Load all notes:
 	got, err := notebook.AllNotes()

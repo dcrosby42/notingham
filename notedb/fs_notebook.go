@@ -78,25 +78,43 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	me.notes[note.Id] = note
 
 	// Square up with the path-id mappings:
+	var fileToRemove string
+	var doSavePathIds bool
+	// compute the path is it would be, given current note content:
+	path, err := newRelFilePath(note, me.Dir, "notes")
+	if err != nil {
+		return Note{}, err
+	}
 	_, pathId := me.pathIds.LookupById(note.Id)
 	if pathId == nil {
-		path, err := computeFilePath(note, me.Dir)
-		if err != nil {
-			return Note{}, err
-		}
+		// pathIds cache doesn't know this ID or its on-disk path: establish
 		pathId = &PathId{Path: path, Id: note.Id}
 		me.pathIds = append(me.pathIds, *pathId)
+		doSavePathIds = true
+	} else if path != pathId.Path {
+		// renamed.  the note content changed, so the title (and filename) need to be updated:
+		fileToRemove = filepath.Join(me.Dir, pathId.Path)
+		pathId.Path = path
+		doSavePathIds = true
+	}
+
+	// Write the note file
+	fname := filepath.Join(me.Dir, pathId.Path)
+	err = ioutil.WriteFile(fname, []byte(note.Content), 0644)
+	if err != nil {
+		return Note{}, err
+	}
+
+	if fileToRemove != "" {
+		// due to rename
+		os.Remove(fileToRemove)
+	}
+
+	if doSavePathIds {
 		// persist path ids to disk
 		if err := me.savePathIds(); err != nil {
 			return Note{}, err
 		}
-	}
-
-	// Write the file
-	fname := filepath.Join(me.Dir, pathId.Path)
-	err := ioutil.WriteFile(fname, []byte(note.Content), 0644)
-	if err != nil {
-		return Note{}, err
 	}
 
 	return *note, nil
@@ -147,7 +165,12 @@ func (me *FsNotebook) loadPathIds() error {
 		if err != nil {
 			return err
 		}
-		return json.Unmarshal(bytes, &me.pathIds)
+		err = json.Unmarshal(bytes, &me.pathIds)
+		if err != nil {
+			return err
+		}
+		me.cleanupPathIds()
+		return nil
 	}
 	// no file, just be empty
 	me.pathIds = make([]PathId, 0)
@@ -155,11 +178,22 @@ func (me *FsNotebook) loadPathIds() error {
 }
 
 func (me *FsNotebook) savePathIds() error {
-	bytes, err := json.Marshal(me.pathIds)
+	me.cleanupPathIds()
+	bytes, err := json.MarshalIndent(me.pathIds, "", "  ")
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(me.pathIdsFile(), bytes, 0644)
+}
+
+func (me *FsNotebook) cleanupPathIds() {
+	cleanedPathIds := make(PathIds, 0)
+	for _, pathId := range me.pathIds {
+		if util.FileExists(filepath.Join(me.Dir, pathId.Path)) {
+			cleanedPathIds = append(cleanedPathIds, pathId)
+		}
+	}
+	me.pathIds = cleanedPathIds
 }
 
 var NoteFilePattern = regexp.MustCompile(`.md$`)
