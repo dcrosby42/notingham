@@ -10,7 +10,7 @@ const CommandPalette = {
         return {
             searchString: "",
             selectedIndex: 0,
-            maxResults: 15,
+            maxResults: 50,
         }
     },
 
@@ -22,7 +22,7 @@ const CommandPalette = {
             } else {
                 items.push(...this.searcher.search(null))
             }
-            return _.take(items,this.maxResults).map(item => {
+            return _.take(items, this.maxResults).map(item => {
                 return {
                     kind: this.searcher.getKind(item),
                     text: this.searcher.getText(item),
@@ -76,7 +76,7 @@ const CommandPalette = {
         choiceStyle(i) {
             return {
                 "is-clickable": true,
-                "choice-highlight": i == this.selectedIndex 
+                "choice-highlight": i == this.selectedIndex
             }
         },
         inputEvent(e) {
