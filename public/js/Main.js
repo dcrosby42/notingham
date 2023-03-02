@@ -1,67 +1,34 @@
 import MyEditor from "./MyEditor.js"
 import Data from "./Data.js"
+import NoteSearcher from "./NoteSearcher.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import { CommandPalette, CommandPaletteModel } from "./CommandPalette.js"
 
 const SAVE_DELAY = 1000
 
-class NoteSearcher {
-    constructor(notes) {
-        this.notes = notes
-        this.notesById = _.keyBy(this.notes, "id")
-        this._reset()
-    }
-    search(str) {
-        if (!str || str.length === 0) {
-            return [...this.notes]
-        } else {
-            const searchRes = this.searchModel.search(str)
-            return _(searchRes)
-                .flatMap(sr => sr.result.map(id => this.notesById[id]))
-                .value()
-        }
-    }
-    getText(note) {
-        if (note) {
-            return note.name
-        }
-    }
-    getKind(note) {
-        return "note"
-    }
-    add(note) {
-        this.searchModel.add(note)
-        this.notesById[note.id] = note
-    }
-    update(note) {
-        this.searchModel.update(note)
-    }
-
-    _reset() {
-        this.searchModel = new FlexSearch.Document({
-            tokenize: "forward",
-            document: {
-                id: "id",
-                index: ["content"],
-            }
-        });
-        this.notes.forEach(n => this.searchModel.add(n))
-    }
+const DefaultKeybinds = {
+    "Escape": "closeCommandPalette",
+    "$mod+KeyP": "toggleCommandPalette",
+    // "Shift+$mod+KeyP": "toggleCommandPalette",
+    "$mod+KeyB": "toggleLeftbarShowing",
+    "Shift+Control+KeyB": "toggleLeftbarShowing",
+    "Shift+Control+KeyD": "toggleDarkMode",
+    "Shift+Control+KeyT": "toggleToolbarVisible",
+    "Shift+Alt+KeyB": "cycleLeftbarState",
+    "$mod+1": ["selectPinnedNote", 0],
+    "$mod+2": ["selectPinnedNote", 1],
+    "$mod+3": ["selectPinnedNote", 2],
+    "$mod+4": ["selectPinnedNote", 3],
+    "$mod+5": ["selectPinnedNote", 4],
+    "$mod+6": ["selectPinnedNote", 5],
+    "$mod+7": ["selectPinnedNote", 6],
+    "$mod+8": ["selectPinnedNote", 7],
+    "$mod+9": ["selectPinnedNote", 8],
+    // "$mod+0": ["selectPinnedNote", 9],
+    "$mod+k p p": "toggleNotePinned",
+    // "$mod+k p k": "movePinnedNoteUp",
+    // "$mod+k p j": "movePinnedNoteDown",
 }
-
-// DELETEME
-// let Search = null;
-
-// function resetSearch(notes) {
-//     Search = new FlexSearch.Document({
-//         tokenize: "forward",
-//         document: {
-//             id: "id",
-//             index: ["content"],
-//         }
-//     });
-//     notes.forEach(note => Search.add(note))
-// }
 
 export default {
     data() {
@@ -84,36 +51,33 @@ export default {
     async mounted() {
         this.notes = await Data.Notes.getAll()
         this.noteSearcher = Vue.shallowRef(new NoteSearcher(this.notes))
-        // resetSearch(this.notes) // DELETEME
         this.loaded = true;
 
-        tinykeys(window, {
-            "Alt+KeyP": (e) => {
-                this.openCommandPalette()
-                e.preventDefault()
-            },
-            "Escape": (e) => {
-                this.closeCommandPalette()
-                e.preventDefault()
-            },
-            "Alt+KeyD": (e) => {
-                this.toggleDarkMode()
-                e.preventDefault()
-            },
-            "Alt+KeyY": (e) => {
-                this.toolbarVisible = !this.toolbarVisible
-                e.preventDefault()
-            },
-            "Alt+KeyB": (e) => {
-                this.toggleLeftbarShowing()
-                e.preventDefault()
-            },
-            "Shift+Alt+KeyB": (e) => {
-                this.cycleLeftbarState()
-                e.preventDefault()
+        const tinykeysConfig = _.mapValues(DefaultKeybinds, (action, bindingExpr) => {
+            let method
+            let args = []
+            if (_.isString(action)) {
+                method = action
+            } else if (_.isPlainObject(action)) {
+                method = action.method
+            } else if (_.isArray(action)) {
+                method = action[0]
+                args = _.tail(action)
+            }
+            if (!_.has(this, method)) {
+                console.log(`Key binding for ${bindingExpr}: method ${method} invalid`)
+                method = null
+            }
+            return (e) => {
+                if (method) {
+                    this[method](...args)
+                    e.preventDefault()
+                } else {
+                    console.log(`Key binding for ${bindingExpr}: no method given`)
+                }
             }
         })
-
+        tinykeys(window, tinykeysConfig)
     },
     watch: {
         // DELETEME
@@ -123,10 +87,11 @@ export default {
     },
     methods: {
         noteItemStyle(note) {
+            const active = note.id == this.selectedId
             return {
                 'has-text-light': this.darkMode,
-                'has-background-dark': this.darkMode && !note.active,
-                'is-active': note.active,
+                'has-background-dark': this.darkMode && !active,
+                'is-active': active,
             }
         },
         trackChangedNote(note) {
@@ -156,6 +121,19 @@ export default {
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
         },
+        selectPinnedNote(i) {
+            const note = this.pinnedNotes[i]
+            if (note) {
+                this.selectedId = note.id
+            } else {
+                console.warn("selectPinnedNote(): no pinned note at", i)
+            }
+        },
+        toggleNotePinned() {
+            if (this.selectedId) {
+                console.log("TODO: pin note", this.selectedId)
+            }
+        },
         cycleLeftbarState() {
             const states = ["showing", "large", "hidden"]
             let i = states.indexOf(this.leftbarState) + 1
@@ -175,6 +153,9 @@ export default {
             this.darkMode = !this.darkMode
             Data.Prefs.darkMode = this.darkMode
         },
+        toggleToolbarVisible() {
+            this.toolbarVisible = !this.toolbarVisible
+        },
         openCommandPalette() {
             if (!this.commandPaletteShowing) {
                 this.commandPaletteShowing = true
@@ -189,6 +170,13 @@ export default {
         },
         closeCommandPalette() {
             this.commandPaletteShowing = false
+        },
+        toggleCommandPalette() {
+            if (this.commandPaletteShowing) {
+                this.closeCommandPalette()
+            } else {
+                this.openCommandPalette()
+            }
         },
         commandPaletteSelection(choice) {
             this.closeCommandPalette()
@@ -219,19 +207,13 @@ export default {
             }
             return notes;
         },
-        noteRefs() {
-            if (this.loaded) {
-                return this.filteredNotes.map(note => {
-                    return {
-                        note,
-                        // name: note.name,
-                        // id: note.id,
-                        active: this.selectedId == note.id,
-                    }
-                })
-            } else {
-                return [];
-            }
+        pinnedNotes() {
+            // Data.Prefs.pinnedNotes
+            const ids = [
+                "defedc86-8d30-424b-a7c7-66ab9b980cfb",
+                "164b95bf-566c-4a65-95e9-e96492d09372",
+            ]
+            return _.compact(_.map(ids, id => this.notesById[id]))
         },
         selectedNote() {
             if (this.loaded && this.selectedId != null) {
@@ -281,15 +263,25 @@ export default {
             Notingham
           </p>
           <!-- "New" button -->
-          <button class="button is-small" @click="newNote">New</button>
+          <div>
+              <button class="button is-small" @click="newNote">New</button>
+          </div>
+
+          <div :class="darkModeStyles">
+            <ul>
+                <li v-for="note in pinnedNotes" @click="selectedId = note.id" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+            </ul>
+          </div>
 
           <!-- Search box -->
-          <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small" :class="darkModeStyles">
+          <div style="display:flex">
+            <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small" :class="darkModeStyles">
+          </div>
 
-          <!-- Note list -->
+          <!-- Filtered list -->
           <div :class="darkModeStyles" style="overflow: auto">
             <ul style="overflow:auto">
-                <li v-for="ref in noteRefs" @click="selectedId = ref.note.id" style="padding:5px;"><a :class="noteItemStyle(ref)">{{ref.note.name}}</a></li>
+                <li v-for="note in filteredNotes" @click="selectedId = note.id" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
             </ul>
           </div>
       </div>

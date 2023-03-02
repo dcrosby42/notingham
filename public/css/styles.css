@@ -3,48 +3,125 @@
 */
 
 .notingham-root {
-  width: 100vw;
-  height: 100vh;
+    width: 100vw;
+    height: 100vh;
 }
 
 .simple-editor-grid {
-  display: grid;
-  grid-template-columns: 20% 1fr;
+    display: grid;
+    grid-template-columns: 20% 1fr;
 }
 
 .simple-editor-grid.leftbar-hidden {
-  grid-template-columns: 0% 1fr;
+    grid-template-columns: 0% 1fr;
 }
 
 .simple-editor-grid.leftbar-large {
-  grid-template-columns: 35% 1fr;
+    grid-template-columns: 35% 1fr;
 }
 
 .simple-editor-grid--leftbar {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  overflow: auto
+    display: grid;
+    /* grid-template-rows: auto auto auto 1fr; */
+    grid-template-rows: auto auto auto auto 1fr;
+    overflow: auto
 }
 
 .command-palette {
-  position: fixed;
-  /* top: 50%; */
-  top: 0px;
-  left: 50%;
-  /* bring your own prefixes */
-  transform: translate(-50%, 0%);
-  width: 700px;
-  background: white;
+    position: fixed;
+    /* top: 50%; */
+    top: 0px;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%, 0%);
+    width: 700px;
+    background: white;
 }
+
 .command-palette .command-input {
-  font-size: 1.5em;
-  width: 100%;
+    font-size: 1.5em;
+    width: 100%;
 }
+
 .command-palette .choice-highlight {
-  color: white;
-  background-color: #66B;
+    color: white;
+    background-color: #66B;
 }
 
 .is-active {
-  background: #66b;
+    background: #66b;
+}
+
+/* .nowrap {
+    white-space: nowrap;
+} */
+
+.leftbar-notelist-note {
+    padding-left: 5px;
+    white-space: nowrap;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents strong,
+.toastui-editor-md-preview .toastui-editor-contents strong {
+    color: inherit;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents,
+.toastui-editor-md-preview .toastui-editor-contents {
+    font-size: 17px;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents h1,
+.toastui-editor-md-preview .toastui-editor-contents h1 {
+    font-size: 30px;
+    border: 0px;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents h2,
+.toastui-editor-md-preview .toastui-editor-contents h2 {
+    font-size: 28px;
+    border: 0px;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents h3,
+.toastui-editor-md-preview .toastui-editor-contents h3 {
+    font-size: 26px;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents h4,
+.toastui-editor-md-preview .toastui-editor-contents h4 {
+    font-size: 24px;
+}
+
+.toastui-editor-ww-container .toastui-editor-contents h5,
+.toastui-editor-ww-container .toastui-editor-contents h6,
+.toastui-editor-md-preview .toastui-editor-contents h5,
+.toastui-editor-md-preview .toastui-editor-contents h6 {
+    font-size: 22px;
+}
+
+
+.toastui-editor.md-mode .ProseMirror {
+    font-size: 17px;
+}
+
+.toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading1 {
+    font-size: 30px;
+}
+
+.toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading2 {
+    font-size: 28px;
+}
+
+.toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading3 {
+    font-size: 26px;
+}
+
+.toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading4 {
+    font-size: 24px;
+}
+
+.toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading5,
+.toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading6 {
+    font-size: 22px;
 }
