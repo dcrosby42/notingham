@@ -34,7 +34,6 @@ export default {
             this.editor.height(newValue);
         },
         toolbarVisible(newValue, oldValue) {
-            console.log("watch toolbarVisible", newValue, oldValue)
             if (newValue != oldValue) {
                 this.updateToolbarVisibility()
             }
@@ -44,6 +43,12 @@ export default {
         const options = {
             ...this.computedOptions,
             el: this.getRootElement(),
+            hooks: {
+                addImageBlobHook(file, callback, _ui) {
+                    console.log("HOOK! addImageBlobHook", file, callback, _ui)
+                    callback("https://t4.ftcdn.net/jpg/02/16/34/73/360_F_216347359_bsr0Oc29y5iOTCbeeaPU2uDZF0jJRsLs.jpg", "my ship")
+                }
+            }
         };
         window.EditorEl = this.getRootElement() // deleteme debugging
         this.editor = Vue.shallowRef(new Editor(options));

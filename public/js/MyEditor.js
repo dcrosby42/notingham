@@ -11,6 +11,7 @@ export default {
         height: { type: String, default: "100%", required: false },
         darkMode: { type: Boolean, default: true, required: false },
         toolbarVisible: { type: Boolean, default: true, required: false },
+        editorMode: { type: String, default: "wysiwyg", required: false },
     },
     data() {
         return {
@@ -20,21 +21,21 @@ export default {
         // window.App = this;
     },
     updated() {
-        // console.log("updated", this.modelValue)
-        const e = this.$refs.editor.editor
-        if (e.getMarkdown() != this.modelValue) {
-            e.setMarkdown(this.modelValue, false)
+        if (this.editor.getMarkdown() != this.modelValue) {
+            this.editor.setMarkdown(this.modelValue, false)
         }
     },
     mounted() {
-        // window.Editor = this.$refs.editor.editor
-        // window.Editor = this.$refs.editor.getRootElement()
+        // window.Editor = this.editor
+    },
+    watch: {
+        editorMode(mode, _oldMode) {
+            this.editor.changeMode(mode, true)
+        }
     },
     methods: {
         handleChange(editorMode) {
-            const content = this.$refs.editor.editor.getMarkdown()
-            this.$emit("update:modelValue", content)
-            // console.log(this.$refs.editor.editor.getMarkdown())
+            this.$emit("update:modelValue", this.editor.getMarkdown())
         }
     },
     computed: {
@@ -44,6 +45,9 @@ export default {
                 opts.theme = "dark"
             }
             return opts
+        },
+        editor() {
+            return this.$refs.editor.editor
         }
     },
     template: `
@@ -51,7 +55,7 @@ export default {
           <VueEditor 
             ref="editor" 
             previewStyle="tab" 
-            initialEditType="wysiwyg" 
+            :initialEditType="editorMode" 
             :initialValue="modelValue" 
             @change="handleChange"
             :height="height" 

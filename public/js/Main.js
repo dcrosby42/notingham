@@ -11,6 +11,7 @@ const SAVE_DELAY = 1000
 const DefaultKeybinds = {
     "Escape": "closeCommandPalette",
     "$mod+KeyP": "toggleCommandPalette",
+    "$mod+KeyM": "toggleEditorMode",
     // "Shift+$mod+KeyP": "toggleCommandPalette",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
     "Shift+Control+KeyD": "toggleDarkMode",
@@ -28,8 +29,8 @@ const DefaultKeybinds = {
     // "$mod+0": ["selectPinnedNote", 9],
     "$mod+k p": "toggleNotePinned",
     // "$mod+k ": "movePinnedNoteUp",
-    "$mod+k ArrowUp": "movePinnedNoteUp",
-    "$mod+k ArrowDown": "movePinnedNoteDown",
+    "$mod+k k": "movePinnedNoteUp",
+    "$mod+k j": "movePinnedNoteDown",
     // "$mod+k p ArrowDown": "movePinnedNoteDown",
 }
 
@@ -79,6 +80,7 @@ export default {
             commandPaletteShowing: false,
             noteSearcher: null,
             pinnedNoteIds: [],
+            editorMode: "wysiwyg",
         }
     },
     created() {
@@ -199,6 +201,14 @@ export default {
         toggleToolbarVisible() {
             this.toolbarVisible = !this.toolbarVisible
         },
+        toggleEditorMode() {
+            if (this.editorMode === 'wysiwyg') {
+                this.editorMode = 'markdown'
+            } else {
+                this.editorMode = 'wysiwyg'
+            }
+            console.log("editorMode", this.editorMode)
+        },
         openCommandPalette() {
             if (!this.commandPaletteShowing) {
                 this.commandPaletteShowing = true
@@ -305,9 +315,10 @@ export default {
               <button class="button is-small" @click="newNote">New</button>
           </div>
 
+          <!-- Pinned notes -->
           <div :class="darkModeStyles">
             <ul>
-                <li v-for="note in pinnedNotes" @click="selectedId = note.id" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                <li v-for="note,i in pinnedNotes" @click="selectedId = note.id" class="leftbar-notelist-note">{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a></li>
             </ul>
           </div>
 
@@ -326,7 +337,11 @@ export default {
 
 
       <!-- MAIN CONTENT -->
-      <MyEditor v-model="currentContent" :darkMode="darkMode" :toolbarVisible="toolbarVisible"/>
+      <MyEditor v-model="currentContent" 
+         :darkMode="darkMode" 
+         :toolbarVisible="toolbarVisible"
+         :editorMode="editorMode"
+         />
 
       <CommandPalette v-if="commandPaletteShowing"
         :searcher="noteSearcher"
