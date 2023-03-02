@@ -1,7 +1,6 @@
 package notedb
 
 import (
-	"fmt"
 	"path/filepath"
 )
 
@@ -24,7 +23,6 @@ func (me *FsNotebookRepo) GetNotebook(id string) (Notebook, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("Loaded FsNotebook %v\n", id)
 		me.Notebooks[id] = notebook
 	}
 	return notebook, nil

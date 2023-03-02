@@ -44,7 +44,6 @@ func Serve(config Config, done chan os.Signal) error {
 		notebook, err := repo.GetNotebook(c.Param("notebook"))
 		if err == nil {
 			notes, err := notebook.AllNotes()
-			fmt.Printf("AllNotes %#v\n", notes)
 			if err == nil {
 				c.JSON(200, notes)
 				return
