@@ -19,5 +19,13 @@ class PrefsApi {
         this._storage.set("prefs.pinnedNotes", val)
         return val
     }
+    get lastSelectedId() {
+        return this._storage.get("prefs.lastSelectedId")
+    }
+    set lastSelectedId(val) {
+        this._storage.set("prefs.lastSelectedId", val)
+        return val
+    }
+
 }
 export default PrefsApi

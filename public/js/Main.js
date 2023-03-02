@@ -4,13 +4,14 @@ import NoteSearcher from "./NoteSearcher.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import { CommandPalette, CommandPaletteModel } from "./CommandPalette.js"
 
+import { arrayMove } from "./utils.js"
+
 const SAVE_DELAY = 1000
 
 const DefaultKeybinds = {
     "Escape": "closeCommandPalette",
     "$mod+KeyP": "toggleCommandPalette",
     // "Shift+$mod+KeyP": "toggleCommandPalette",
-    "$mod+KeyB": "toggleLeftbarShowing",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
     "Shift+Control+KeyD": "toggleDarkMode",
     "Shift+Control+KeyT": "toggleToolbarVisible",
@@ -25,9 +26,43 @@ const DefaultKeybinds = {
     "$mod+8": ["selectPinnedNote", 7],
     "$mod+9": ["selectPinnedNote", 8],
     // "$mod+0": ["selectPinnedNote", 9],
-    "$mod+k p p": "toggleNotePinned",
-    // "$mod+k p k": "movePinnedNoteUp",
-    // "$mod+k p j": "movePinnedNoteDown",
+    "$mod+k p": "toggleNotePinned",
+    // "$mod+k ": "movePinnedNoteUp",
+    "$mod+k ArrowUp": "movePinnedNoteUp",
+    "$mod+k ArrowDown": "movePinnedNoteDown",
+    // "$mod+k p ArrowDown": "movePinnedNoteDown",
+}
+
+const DefaultPinnedNoteIds = [
+    "defedc86-8d30-424b-a7c7-66ab9b980cfb", // TODO
+    "164b95bf-566c-4a65-95e9-e96492d09372", // Group Vars Getting Out
+]
+
+function bindKeys({ from, target, bindings }) {
+    tinykeys(from, _.mapValues(bindings, (action, bindingExpr) => {
+        let method
+        let args = []
+        if (_.isString(action)) {
+            method = action
+        } else if (_.isPlainObject(action)) {
+            method = action.method
+        } else if (_.isArray(action)) {
+            method = action[0]
+            args = _.tail(action)
+        }
+        if (!_.has(target, method)) {
+            console.warn(`Key binding for ${bindingExpr}: method ${method} invalid`)
+            method = null
+        }
+        return (e) => {
+            if (method) {
+                target[method](...args)
+                e.preventDefault()
+            } else {
+                console.warn(`Key binding for ${bindingExpr}: no method given`)
+            }
+        }
+    }))
 }
 
 export default {
@@ -43,6 +78,7 @@ export default {
             toolbarVisible: true,
             commandPaletteShowing: false,
             noteSearcher: null,
+            pinnedNoteIds: [],
         }
     },
     created() {
@@ -53,37 +89,23 @@ export default {
         this.noteSearcher = Vue.shallowRef(new NoteSearcher(this.notes))
         this.loaded = true;
 
-        const tinykeysConfig = _.mapValues(DefaultKeybinds, (action, bindingExpr) => {
-            let method
-            let args = []
-            if (_.isString(action)) {
-                method = action
-            } else if (_.isPlainObject(action)) {
-                method = action.method
-            } else if (_.isArray(action)) {
-                method = action[0]
-                args = _.tail(action)
-            }
-            if (!_.has(this, method)) {
-                console.log(`Key binding for ${bindingExpr}: method ${method} invalid`)
-                method = null
-            }
-            return (e) => {
-                if (method) {
-                    this[method](...args)
-                    e.preventDefault()
-                } else {
-                    console.log(`Key binding for ${bindingExpr}: no method given`)
-                }
-            }
-        })
-        tinykeys(window, tinykeysConfig)
+        bindKeys({ from: window, target: this, bindings: DefaultKeybinds })
+
+        this.pinnedNoteIds = Data.Prefs.pinnedNotes || _.clone(DefaultPinnedNoteIds)
+        Data.Prefs.pinnedNoteIds = this.pinnedNoteIds // save em back just in case
+
+        this.selectedId = Data.Prefs.lastSelectedId
     },
     watch: {
         // DELETEME
         // "commandPaletteModel.input": function(cpm) {
         //     console.log("watch cpm",cpm)
         // }
+        selectedId: function (newId, oldId) {
+            if (newId !== Data.Prefs.lastSelectedId) {
+                Data.Prefs.lastSelectedId = newId
+            }
+        }
     },
     methods: {
         noteItemStyle(note) {
@@ -131,8 +153,29 @@ export default {
         },
         toggleNotePinned() {
             if (this.selectedId) {
-                console.log("TODO: pin note", this.selectedId)
+                const id = this.selectedId
+                const i = this.pinnedNoteIds.indexOf(id)
+                if (i >= 0) {
+                    // id is pinned; unpin it
+                    this.pinnedNoteIds.splice(i, 1)
+                } else {
+                    // pin the id
+                    this.pinnedNoteIds.push(id)
+                }
+                Data.Prefs.pinnedNotes = this.pinnedNoteIds
             }
+        },
+        movePinnedNoteUp() {
+            const i = this.pinnedNoteIds.indexOf(this.selectedId)
+            const j = (i - 1) % this.pinnedNoteIds.length
+            arrayMove(this.pinnedNoteIds, i, j)
+            Data.Prefs.pinnedNotes = this.pinnedNoteIds
+        },
+        movePinnedNoteDown() {
+            const i = this.pinnedNoteIds.indexOf(this.selectedId)
+            const j = (i + 1) % this.pinnedNoteIds.length
+            arrayMove(this.pinnedNoteIds, i, j)
+            Data.Prefs.pinnedNotes = this.pinnedNoteIds
         },
         cycleLeftbarState() {
             const states = ["showing", "large", "hidden"]
@@ -163,7 +206,7 @@ export default {
                     if (this.$refs.commandPalette) {
                         this.$refs.commandPalette.focus()
                     } else {
-                        console.log("can't focus command palette")
+                        console.warn("can't focus command palette")
                     }
                 })
             }
@@ -200,7 +243,7 @@ export default {
                 for (let i = 0; i < sres.length; i++) {
                     const element = sres[i];
                     if (_.isUndefined(element)) {
-                        console.log(`filteredNotes search='${this.searchString}': search result ${i} is undefined? sres=`, sres)
+                        console.warn(`filteredNotes search='${this.searchString}': search result ${i} is undefined? sres=`, sres)
                     }
                 }
                 return sres
@@ -208,12 +251,7 @@ export default {
             return notes;
         },
         pinnedNotes() {
-            // Data.Prefs.pinnedNotes
-            const ids = [
-                "defedc86-8d30-424b-a7c7-66ab9b980cfb",
-                "164b95bf-566c-4a65-95e9-e96492d09372",
-            ]
-            return _.compact(_.map(ids, id => this.notesById[id]))
+            return _.compact(_.map(this.pinnedNoteIds, id => this.notesById[id]))
         },
         selectedNote() {
             if (this.loaded && this.selectedId != null) {
@@ -256,7 +294,7 @@ export default {
     template: `
     <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, darkModeStyles]">
 
-      
+
       <!-- LEFT BAR -->
       <div class="simple-editor-grid--leftbar">
           <p class="menu-label">
