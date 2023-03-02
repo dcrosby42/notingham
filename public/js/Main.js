@@ -12,6 +12,7 @@ const DefaultKeybinds = {
     "Escape": "closeCommandPalette",
     "$mod+KeyP": "toggleCommandPalette",
     "$mod+KeyM": "toggleEditorMode",
+    "Shift+Control+KeyN": "newNote",
     // "Shift+$mod+KeyP": "toggleCommandPalette",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
     "Shift+Control+KeyD": "toggleDarkMode",
