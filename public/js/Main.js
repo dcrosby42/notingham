@@ -12,6 +12,7 @@ const DefaultKeybinds = {
     "Escape": "closeCommandPalette",
     "$mod+KeyP": "toggleCommandPalette",
     "$mod+KeyM": "toggleEditorMode",
+    "$mod+KeyK ": "addUrl",
     "Shift+Control+KeyN": "newNote",
     // "Shift+$mod+KeyP": "toggleCommandPalette",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
@@ -28,10 +29,9 @@ const DefaultKeybinds = {
     "$mod+8": ["selectPinnedNote", 7],
     "$mod+9": ["selectPinnedNote", 8],
     // "$mod+0": ["selectPinnedNote", 9],
-    "$mod+k p": "toggleNotePinned",
-    // "$mod+k ": "movePinnedNoteUp",
-    "$mod+k k": "movePinnedNoteUp",
-    "$mod+k j": "movePinnedNoteDown",
+    "Shift+Control+p p": "toggleNotePinned",
+    "Shift+Control+p k": "movePinnedNoteUp",
+    "Shift+Control+p j": "movePinnedNoteDown",
     // "$mod+k p ArrowDown": "movePinnedNoteDown",
 }
 
@@ -88,6 +88,7 @@ export default {
         this.persistChangedNotes = _.debounce(this._persistChangedNotes, SAVE_DELAY)
     },
     async mounted() {
+        window.Main = this
         this.notes = await Data.Notes.getAll()
         this.noteSearcher = Vue.shallowRef(new NoteSearcher(this.notes))
         this.loaded = true;
@@ -209,6 +210,17 @@ export default {
                 this.editorMode = 'wysiwyg'
             }
             console.log("editorMode", this.editorMode)
+        },
+        addUrl() {
+            const doIt = () => this.$refs.myEditor.startAddLink()
+            if (this.toolbarVisible) {
+                doIt()
+            } else {
+                // toolbar must be showing
+                this.toolbarVisible = true
+                this.$nextTick(doIt)
+            }
+
         },
         openCommandPalette() {
             if (!this.commandPaletteShowing) {
@@ -338,7 +350,7 @@ export default {
 
 
       <!-- MAIN CONTENT -->
-      <MyEditor v-model="currentContent" 
+      <MyEditor v-model="currentContent" ref="myEditor"
          :darkMode="darkMode" 
          :toolbarVisible="toolbarVisible"
          :editorMode="editorMode"

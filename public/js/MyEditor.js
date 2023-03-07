@@ -26,7 +26,7 @@ export default {
         }
     },
     mounted() {
-        // window.Editor = this.editor
+        window.Editor = this.editor
     },
     watch: {
         editorMode(mode, _oldMode) {
@@ -36,7 +36,17 @@ export default {
     methods: {
         handleChange(editorMode) {
             this.$emit("update:modelValue", this.editor.getMarkdown())
-        }
+        },
+        // Dirty tricksie.  Couldn't find an "a-priori" means to invoke the addLink UI functionality.  (The addLink command works ok, but it doesn't include the link editor popup)
+        startAddLink() {
+            const toolbarUrlButton = document.getElementsByClassName("link toastui-editor-toolbar-icons")
+            if (_.size(toolbarUrlButton) >= 1) {
+                toolbarUrlButton[0].click()
+                this.$nextTick(() => {
+                    document.getElementById('toastuiLinkUrlInput').focus()
+                })
+            }
+        },
     },
     computed: {
         options() {
