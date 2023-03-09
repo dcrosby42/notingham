@@ -47,6 +47,15 @@ export default {
                 })
             }
         },
+        toggleLink() {
+            const fn = _.get(this.editor, "wwEditor.commands.toggleLink")
+            if (fn) { fn() }
+            // this.editor.wwEditor.commands.toggleLink()
+        },
+        toggleTask() {
+            const fn = _.get(this.editor, "wwEditor.commands.taskList")
+            if (fn) { fn() }
+        }
     },
     computed: {
         options() {

@@ -13,6 +13,8 @@ const DefaultKeybinds = {
     "$mod+KeyP": "toggleCommandPalette",
     "$mod+KeyM": "toggleEditorMode",
     "$mod+KeyK ": "addUrl",
+    // "Shift+$mod+KeyK ": "toggleLink",
+    "Shift+$mod+KeyC ": "toggleTask",
     "Shift+Control+KeyN": "newNote",
     // "Shift+$mod+KeyP": "toggleCommandPalette",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
@@ -221,6 +223,12 @@ export default {
                 this.$nextTick(doIt)
             }
 
+        },
+        // toggleLink() {
+        //     this.$refs.myEditor.toggleLink()
+        // },
+        toggleTask() {
+            this.$refs.myEditor.toggleTask()
         },
         openCommandPalette() {
             if (!this.commandPaletteShowing) {
