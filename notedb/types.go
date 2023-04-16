@@ -6,6 +6,8 @@ type Repo interface {
 
 type Notebook interface {
 	AllNotes() ([]Note, error)
+	AllNoteIds() ([]string, error)
+	GetNote(id string) (Note, error)
 	SaveNote(Note) (Note, error)
 	DeleteNote(string) (Note, error)
 }

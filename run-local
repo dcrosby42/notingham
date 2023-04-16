@@ -13,6 +13,6 @@ openbrowser() {
 }
 
 set -e
-go install
+./install
 openbrowser
 notingham server --host $host --port $port --data-dir notebooks --site-dir public

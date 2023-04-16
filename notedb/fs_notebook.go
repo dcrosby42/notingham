@@ -53,10 +53,26 @@ func (me *FsNotebook) RelativePath(path string) string {
 	return strings.TrimPrefix(path, me.Dir)[1:]
 }
 
+func (me *FsNotebook) GetNote(id string) (Note, error) {
+	note, found := me.notes[id]
+	if !found {
+		return Note{}, fmt.Errorf("couldn't find note with id %q", id)
+	}
+	return *note, nil
+}
+
 func (me *FsNotebook) AllNotes() ([]Note, error) {
 	ret := make([]Note, 0, len(me.notes))
 	for _, note := range me.notes {
 		ret = append(ret, *note)
+	}
+	return ret, nil
+}
+
+func (me *FsNotebook) AllNoteIds() ([]string, error) {
+	ret := make([]string, 0, len(me.notes))
+	for _, note := range me.notes {
+		ret = append(ret, note.Id)
 	}
 	return ret, nil
 }

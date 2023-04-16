@@ -2,4 +2,4 @@
 pushd `dirname ${BASH_SOURCE[0]}` > /dev/null; HERE=`pwd`; popd > /dev/null
 cd $HERE
 
-go install && notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks
+./install && notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks

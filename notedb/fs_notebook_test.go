@@ -29,11 +29,29 @@ func Test_NewFsNotebook_SaveNote(t *testing.T) {
 	Assert(t).That(err, IsNil())
 
 	note1 := Note{Id: NoteId(), Content: "the content of note1"}
+	note2 := Note{Id: "astring", Content: "the content of note2"}
 
 	t.Run("simple SaveNote()", func(t *testing.T) {
 		retNote, err := notebook.SaveNote(note1)
 		Assert(t).That(err, IsNil())
 		Assert(t).That(retNote, Equals(note1))
+	})
+
+	t.Run("SaveNote() and GetNote()", func(t *testing.T) {
+		// getting a non-id errs
+		_, err := notebook.GetNote(note2.Id)
+		Assert(t).That(err, Not(IsNil()))
+		Assert(t).That(err.Error(), Contains("couldn't find note with id \"astring\""))
+
+		// Actually put the note in there:
+		retNote, err := notebook.SaveNote(note2)
+		Assert(t).That(err, IsNil())
+		Assert(t).That(retNote, Equals(note2))
+
+		// Now we can get the note
+		gotten, err := notebook.GetNote(note2.Id)
+		Assert(t).That(err, IsNil())
+		Assert(t).That(gotten, Equals(note2))
 	})
 }
 
@@ -65,6 +83,15 @@ func Test_NewFsNotebook_AllNotes(t *testing.T) {
 	Assert(t).That(byId[note1.Id], Equals(note1))
 	Assert(t).That(byId[note2.Id], Equals(note2))
 	Assert(t).That(byId[note3.Id], Equals(note3))
+
+	// Check individual gets
+	gotten1, err := notebook.GetNote(note1.Id)
+	Assert(t).That(err, IsNil())
+	Assert(t).That(gotten1, Equals(note1))
+
+	gotten3, err := notebook.GetNote(note3.Id)
+	Assert(t).That(err, IsNil())
+	Assert(t).That(gotten3, Equals(note3))
 }
 
 func Test_NewFsNotebook_AllNotes_from_disk(t *testing.T) {
