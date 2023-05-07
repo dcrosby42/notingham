@@ -1,9 +1,19 @@
+# Taskfile
+
+```
+$ go install github.com/go-task/task/v3/cmd/task@latest
+$ task test
+$ task install
+$ task run
+$ task run-local
+```
 
 # References
 
 ## Vue3 Compositon API
 
 https://vuejs.org/guide/extras/composition-api-faq.html
+
 
 
 ## Panzoom
