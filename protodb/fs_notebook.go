@@ -1,4 +1,4 @@
-package notedb
+package protodb
 
 import (
 	"encoding/json"
@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/dcrosby42/notingham/db"
 	"github.com/dcrosby42/notingham/util"
 	"github.com/google/uuid"
 )
@@ -20,7 +21,7 @@ func NoteId() string {
 type FsNotebook struct {
 	Dir     string
 	pathIds PathIds
-	notes   map[string]*Note
+	notes   map[string]*db.Note
 }
 
 func NewFsNotebook(dir string) (*FsNotebook, error) {
@@ -53,16 +54,16 @@ func (me *FsNotebook) RelativePath(path string) string {
 	return strings.TrimPrefix(path, me.Dir)[1:]
 }
 
-func (me *FsNotebook) GetNote(id string) (Note, error) {
+func (me *FsNotebook) GetNote(id string) (db.Note, error) {
 	note, found := me.notes[id]
 	if !found {
-		return Note{}, fmt.Errorf("couldn't find note with id %q", id)
+		return db.Note{}, fmt.Errorf("couldn't find note with id %q", id)
 	}
 	return *note, nil
 }
 
-func (me *FsNotebook) AllNotes() ([]Note, error) {
-	ret := make([]Note, 0, len(me.notes))
+func (me *FsNotebook) AllNotes() ([]db.Note, error) {
+	ret := make([]db.Note, 0, len(me.notes))
 	for _, note := range me.notes {
 		ret = append(ret, *note)
 	}
@@ -77,7 +78,7 @@ func (me *FsNotebook) AllNoteIds() ([]string, error) {
 	return ret, nil
 }
 
-func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
+func (me *FsNotebook) SaveNote(incoming db.Note) (db.Note, error) {
 	// Get square with the in-memory note store:
 	note, found := me.notes[incoming.Id]
 	if found {
@@ -99,7 +100,7 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	// compute the path is it would be, given current note content:
 	path, err := newRelFilePath(note, me.Dir, "notes")
 	if err != nil {
-		return Note{}, err
+		return db.Note{}, err
 	}
 	_, pathId := me.pathIds.LookupById(note.Id)
 	if pathId == nil {
@@ -118,7 +119,7 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	fname := filepath.Join(me.Dir, pathId.Path)
 	err = ioutil.WriteFile(fname, []byte(note.Content), 0644)
 	if err != nil {
-		return Note{}, err
+		return db.Note{}, err
 	}
 
 	if fileToRemove != "" {
@@ -129,14 +130,14 @@ func (me *FsNotebook) SaveNote(incoming Note) (Note, error) {
 	if doSavePathIds {
 		// persist path ids to disk
 		if err := me.savePathIds(); err != nil {
-			return Note{}, err
+			return db.Note{}, err
 		}
 	}
 
 	return *note, nil
 }
 
-func (me *FsNotebook) DeleteNote(id string) (Note, error) {
+func (me *FsNotebook) DeleteNote(id string) (db.Note, error) {
 	// Remove from note cache
 	note, found := me.notes[id]
 	if found {
@@ -153,19 +154,19 @@ func (me *FsNotebook) DeleteNote(id string) (Note, error) {
 
 		// persist path-id index to disk
 		if err := me.savePathIds(); err != nil {
-			return Note{}, err
+			return db.Note{}, err
 		}
 
 		// Trash the file
 		err := os.MkdirAll(filepath.Join(me.Dir, "trash"), 0755)
 		if err != nil {
-			return Note{}, err
+			return db.Note{}, err
 		}
 		originalFname := filepath.Join(me.Dir, pathId.Path)
 		trashedFilename := filepath.Join(me.Dir, "trash", filepath.Base(pathId.Path))
 		err = os.Rename(originalFname, trashedFilename)
 		if err != nil {
-			return Note{}, err
+			return db.Note{}, err
 		}
 	}
 	return *note, nil
@@ -215,7 +216,7 @@ func (me *FsNotebook) cleanupPathIds() {
 var NoteFilePattern = regexp.MustCompile(`.md$`)
 
 func (me *FsNotebook) loadNotes() error {
-	me.notes = make(map[string]*Note)
+	me.notes = make(map[string]*db.Note)
 	return filepath.Walk(me.NotesDir(), func(fullPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err)
@@ -230,13 +231,13 @@ func (me *FsNotebook) loadNotes() error {
 				me.pathIds = append(me.pathIds, newPathId)
 				pathId = &newPathId
 			}
-			// load Note
+			// load db.Note
 			data, err := ioutil.ReadFile(fullPath)
 			if err != nil {
 				return err
 			}
-			note := &Note{Id: pathId.Id, Content: string(data)}
-			// index Note by id
+			note := &db.Note{Id: pathId.Id, Content: string(data)}
+			// index db.Note by id
 			me.notes[pathId.Id] = note
 		}
 		return nil

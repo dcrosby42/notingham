@@ -1,9 +1,10 @@
-package notedb
+package protodb
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/dcrosby42/notingham/db"
 	"github.com/dcrosby42/notingham/util"
 	. "github.com/pepinns/go-hamcrest"
 )
@@ -28,8 +29,8 @@ func Test_NewFsNotebook_SaveNote(t *testing.T) {
 	notebook, err := NewFsNotebook(dir)
 	Assert(t).That(err, IsNil())
 
-	note1 := Note{Id: NoteId(), Content: "the content of note1"}
-	note2 := Note{Id: "astring", Content: "the content of note2"}
+	note1 := db.Note{Id: NoteId(), Content: "the content of note1"}
+	note2 := db.Note{Id: "astring", Content: "the content of note2"}
 
 	t.Run("simple SaveNote()", func(t *testing.T) {
 		retNote, err := notebook.SaveNote(note1)
@@ -61,11 +62,11 @@ func Test_NewFsNotebook_AllNotes(t *testing.T) {
 	// build up a notebook
 	notebook, err := NewFsNotebook(dir)
 	Assert(t).That(err, IsNil())
-	note1, err := notebook.SaveNote(Note{Id: NoteId(), Content: "the content of note1"})
+	note1, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the content of note1"})
 	Assert(t).That(err, IsNil())
-	note2, err := notebook.SaveNote(Note{Id: NoteId(), Content: "the second note"})
+	note2, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the second note"})
 	Assert(t).That(err, IsNil())
-	note3, err := notebook.SaveNote(Note{Id: NoteId(), Content: "third time pays for all"})
+	note3, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "third time pays for all"})
 	Assert(t).That(err, IsNil())
 
 	// Load all notes:
@@ -74,7 +75,7 @@ func Test_NewFsNotebook_AllNotes(t *testing.T) {
 	Assert(t).That(len(got), Equals(3))
 
 	// (map returned notes by their ids)
-	byId := make(map[string]Note)
+	byId := make(map[string]db.Note)
 	for _, note := range got {
 		byId[note.Id] = note
 	}
@@ -100,11 +101,11 @@ func Test_NewFsNotebook_AllNotes_from_disk(t *testing.T) {
 	// build up a notebook
 	notebook, err := NewFsNotebook(dir)
 	Assert(t).That(err, IsNil())
-	note1, err := notebook.SaveNote(Note{Id: NoteId(), Content: "the content of note1"})
+	note1, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the content of note1"})
 	Assert(t).That(err, IsNil())
-	note2, err := notebook.SaveNote(Note{Id: NoteId(), Content: "the second note"})
+	note2, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the second note"})
 	Assert(t).That(err, IsNil())
-	note3, err := notebook.SaveNote(Note{Id: NoteId(), Content: "third time pays for all"})
+	note3, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "third time pays for all"})
 	Assert(t).That(err, IsNil())
 
 	// Instantiate a new notebook vs. the existing dir:
@@ -117,7 +118,7 @@ func Test_NewFsNotebook_AllNotes_from_disk(t *testing.T) {
 	Assert(t).That(len(got), Equals(3))
 
 	// (map returned notes by their ids)
-	byId := make(map[string]Note)
+	byId := make(map[string]db.Note)
 	for _, note := range got {
 		byId[note.Id] = note
 	}

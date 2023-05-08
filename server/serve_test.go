@@ -6,7 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/dcrosby42/notingham/notedb"
+	"github.com/dcrosby42/notingham/db"
+	. "github.com/dcrosby42/notingham/protodb"
 	"github.com/dcrosby42/notingham/server"
 	. "github.com/pepinns/go-hamcrest"
 )
@@ -30,7 +31,7 @@ func Test_get_all_notes(t *testing.T) {
 
 	WithNotingham(t, config, func(fix *NotinghamFixture) {
 		url := fix.Api("/notebooks/%s/notes", notebookFix.NotebookId)
-		got := make([]Note, 0)
+		got := make([]db.Note, 0)
 		resp, err := fix.Client.R().
 			SetHeader("Accept", "application/json").
 			SetResult(&got).
@@ -39,7 +40,7 @@ func Test_get_all_notes(t *testing.T) {
 
 		Assert(t).That(len(got), Equals(3))
 
-		byId := make(map[string]Note)
+		byId := make(map[string]db.Note)
 		for _, note := range got {
 			byId[note.Id] = note
 		}
@@ -69,14 +70,14 @@ func Test_save_note(t *testing.T) {
 
 			// Retrieve the content
 			url2 := fix.Api("/notebooks/%s/notes", notebookFix.NotebookId)
-			got := make([]Note, 0)
+			got := make([]db.Note, 0)
 			resp2, err := fix.Client.R().
 				SetHeader("Accept", "application/json").
 				SetResult(&got).
 				Get(url2)
 			assertOk(t, resp2, err)
 			Assert(t).That(len(got), Equals(3))
-			byId := make(map[string]Note)
+			byId := make(map[string]db.Note)
 			for _, note := range got {
 				byId[note.Id] = note
 			}
@@ -89,7 +90,7 @@ func Test_save_note(t *testing.T) {
 	})
 
 	t.Run("create new note", func(t *testing.T) {
-		freshNote := Note{Id: "the-new-id", Content: "original-content"}
+		freshNote := db.Note{Id: "the-new-id", Content: "original-content"}
 
 		notebookFix := NewNotebookFixture(t)
 		config := server.Config{DataDir: notebookFix.DataDir}
@@ -106,14 +107,14 @@ func Test_save_note(t *testing.T) {
 
 			// Retrieve the content
 			url2 := fix.Api("/notebooks/%s/notes", notebookFix.NotebookId)
-			got := make([]Note, 0)
+			got := make([]db.Note, 0)
 			resp2, err := fix.Client.R().
 				SetHeader("Accept", "application/json").
 				SetResult(&got).
 				Get(url2)
 			assertOk(t, resp2, err)
 			Assert(t).That(len(got), Equals(4))
-			byId := make(map[string]Note)
+			byId := make(map[string]db.Note)
 			for _, note := range got {
 				byId[note.Id] = note
 			}
@@ -130,7 +131,7 @@ type NotebookFixture struct {
 	NotebookId  string
 	DataDir     string
 	NotebookDir string
-	Notes       map[string]Note
+	Notes       map[string]db.Note
 	NoteIds     []string
 }
 
@@ -146,7 +147,7 @@ func Test_delete_note(t *testing.T) {
 
 		// Retrieve the remaining content
 		url2 := fix.Api("/notebooks/%s/notes", notebookFix.NotebookId)
-		got := make([]Note, 0)
+		got := make([]db.Note, 0)
 		resp2, err := fix.Client.R().
 			SetHeader("Accept", "application/json").
 			SetResult(&got).
@@ -155,7 +156,7 @@ func Test_delete_note(t *testing.T) {
 
 		// See we're down a note:
 		Assert(t).That(len(got), Equals(2))
-		byId := make(map[string]Note)
+		byId := make(map[string]db.Note)
 		for _, note := range got {
 			byId[note.Id] = note
 		}
@@ -175,20 +176,20 @@ func NewNotebookFixture(t *testing.T) *NotebookFixture {
 	Assert(t).That(err, IsNil())
 	notebook, err := NewFsNotebook(fix.NotebookDir)
 	Assert(t).That(err, IsNil())
-	note1, err := notebook.SaveNote(Note{Id: NoteId(), Content: "the content of note1"})
+	note1, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the content of note1"})
 	Assert(t).That(err, IsNil())
-	note2, err := notebook.SaveNote(Note{Id: NoteId(), Content: "the second note"})
+	note2, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the second note"})
 	Assert(t).That(err, IsNil())
-	note3, err := notebook.SaveNote(Note{Id: NoteId(), Content: "third time pays for all"})
+	note3, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "third time pays for all"})
 	Assert(t).That(err, IsNil())
 
-	fix.Notes = make(map[string]Note)
+	fix.Notes = make(map[string]db.Note)
 	fix.Notes[note1.Id] = note1
 	fix.Notes[note2.Id] = note2
 	fix.Notes[note3.Id] = note3
 
 	fix.NoteIds = make([]string, 0)
-	for id, _ := range fix.Notes {
+	for id := range fix.Notes {
 		fix.NoteIds = append(fix.NoteIds, id)
 	}
 	return fix

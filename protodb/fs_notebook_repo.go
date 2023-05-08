@@ -1,21 +1,23 @@
-package notedb
+package protodb
 
 import (
 	"path/filepath"
+
+	"github.com/dcrosby42/notingham/db"
 )
 
 type FsNotebookRepo struct {
 	Dir       string
-	Notebooks map[string]Notebook
+	Notebooks map[string]db.Notebook
 }
 
-func NewFsNotebookRepo(dir string) Repo {
+func NewFsNotebookRepo(dir string) db.Repo {
 	return &FsNotebookRepo{
 		Dir:       dir,
-		Notebooks: make(map[string]Notebook),
+		Notebooks: make(map[string]db.Notebook),
 	}
 }
-func (me *FsNotebookRepo) GetNotebook(id string) (Notebook, error) {
+func (me *FsNotebookRepo) GetNotebook(id string) (db.Notebook, error) {
 	notebook, found := me.Notebooks[id]
 	if !found {
 		var err error

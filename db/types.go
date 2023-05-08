@@ -1,4 +1,6 @@
-package notedb
+package db
+
+import "github.com/google/uuid"
 
 type Repo interface {
 	GetNotebook(string) (Notebook, error)
@@ -15,4 +17,8 @@ type Notebook interface {
 type Note struct {
 	Id      string `json:"id"`
 	Content string `json:"content"`
+}
+
+func NoteId() string {
+	return uuid.New().String()
 }

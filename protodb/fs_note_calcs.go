@@ -1,4 +1,4 @@
-package notedb
+package protodb
 
 import (
 	"fmt"
@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dcrosby42/notingham/db"
 	"github.com/dcrosby42/notingham/util"
 )
 
 var titleCleanerExpr = regexp.MustCompile(`(\s|[^A-Za-z0-9_])+`)
 
-func getNoteTitle(note *Note) string {
+func getNoteTitle(note *db.Note) string {
 	s := strings.SplitN(note.Content, "\n", 2)[0]
 	if s == "" {
 		return note.Id
@@ -22,7 +23,7 @@ func getNoteTitle(note *Note) string {
 	return s
 }
 
-func getNoteFileName(note *Note) string {
+func getNoteFileName(note *db.Note) string {
 	s := getNoteTitle(note)
 	s = strings.ReplaceAll(s, " ", "_")
 	return s + ".md"
@@ -30,7 +31,7 @@ func getNoteFileName(note *Note) string {
 
 var numberedFileExpr = regexp.MustCompile(`\.\d+$`)
 
-func newRelFilePath(note *Note, baseDir, subDir string) (string, error) {
+func newRelFilePath(note *db.Note, baseDir, subDir string) (string, error) {
 	fname := getNoteFileName(note)
 	for util.FileExists(filepath.Join(baseDir, subDir, fname)) {
 		fname = strings.TrimSuffix(fname, ".md")

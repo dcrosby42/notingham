@@ -8,14 +8,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/dcrosby42/notingham/notedb"
+	"github.com/dcrosby42/notingham/db"
+	"github.com/dcrosby42/notingham/protodb"
 	"github.com/dcrosby42/notingham/site"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
 func Serve(config Config, done chan os.Signal) error {
-	repo := notedb.NewFsNotebookRepo(config.DataDir)
+	repo := protodb.NewFsNotebookRepo(config.DataDir)
 
 	router := gin.Default()
 
@@ -57,7 +58,7 @@ func Serve(config Config, done chan os.Signal) error {
 		var err error
 		notebook, err := repo.GetNotebook(c.Param("notebook"))
 		if err == nil {
-			var update notedb.Note
+			var update db.Note
 			if err := c.ShouldBindJSON(&update); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
