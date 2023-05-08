@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"path"
+
+	"github.com/dcrosby42/notingham/db"
 )
 
 type Notebook struct {
@@ -30,18 +32,19 @@ func (me *Notebook) setupDirs() error {
 	return nil
 }
 
-func (me *Notebook) WriteNote(id, content string) error {
-	if id == "" {
+func (me *Notebook) WriteNote(note db.Note) error {
+	if note.Id == "" {
 		return errors.New("cannot write note with blank id")
 	}
-	return os.WriteFile(path.Join(me.Dir, "notes", id), []byte(content), 0644)
+	return os.WriteFile(path.Join(me.Dir, "notes", note.Id), []byte(note.Content), 0644)
 }
 
-func (me *Notebook) ReadNote(id string) (string, error) {
-	data, err := os.ReadFile(path.Join(me.Dir, "notes", id))
+func (me *Notebook) ReadNote(id string) (note db.Note, err error) {
+	var data []byte
+	data, err = os.ReadFile(path.Join(me.Dir, "notes", id))
 	if err != nil {
-		return "", err
+		return
 	}
-
-	return string(data), nil
+	note = db.Note{Id: id, Content: string(data)}
+	return
 }
