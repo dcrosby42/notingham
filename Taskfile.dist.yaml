@@ -21,4 +21,4 @@ tasks:
     deps: [install]
     desc: Install and launch notingham server, but loading web assets directly from the public site dir
     cmds:
-      - notingham server --host 127.0.0.1 --port 900 --data-dir notebooks --site-dir public
+      - notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks --site-dir public
