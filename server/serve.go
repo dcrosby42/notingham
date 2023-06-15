@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dcrosby42/notingham/db"
+	"github.com/dcrosby42/notingham/protodb"
 	"github.com/dcrosby42/notingham/repo"
 	"github.com/dcrosby42/notingham/site"
 	"github.com/gin-contrib/static"
@@ -16,8 +17,13 @@ import (
 )
 
 func Serve(config Config, done chan os.Signal) error {
-	// myRepo := protodb.NewFsNotebookRepo(config.DataDir)
-	myRepo := repo.New(config.DataDir)
+	var myRepo db.Repo
+	if config.UseOldNotebookStyle {
+		myRepo = protodb.NewFsNotebookRepo(config.DataDir)
+	} else {
+		// new db
+		myRepo = repo.New(config.DataDir)
+	}
 
 	router := gin.Default()
 

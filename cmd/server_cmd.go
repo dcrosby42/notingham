@@ -14,13 +14,14 @@ var serverConfig server.Config
 func init() {
 	serverCmd.Flags().IntVar(&serverConfig.BindPort, "port", 9000, "server port to bind")
 	serverCmd.Flags().StringVar(&serverConfig.BindHost, "host", "127.0.0.1", "server host/ip to bind")
-	serverCmd.Flags().StringVar(&serverConfig.SiteDir, "site-dir", "", "in devel mode, the dir to serve static website assets from")
+	serverCmd.Flags().StringVar(&serverConfig.SiteDir, "site-dir", "", "dir from which to serve web assets; default is baked-in assets")
 	serverCmd.Flags().StringVar(&serverConfig.DataDir, "data-dir", "", "where notes and objects are stored on disk")
+	serverCmd.Flags().BoolVar(&serverConfig.UseOldNotebookStyle, "old-style", false, "use original note repo impl")
 	Notingham.AddCommand(serverCmd)
 }
 
 var serverCmd = &cobra.Command{
-	Use:   "server --data-dir <DATADIR> [--port=90000] [--devel] [--site-dir <SITEDIR>]",
+	Use:   "server",
 	Short: "Run the web server",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := serverConfig.Validate(); err != nil {

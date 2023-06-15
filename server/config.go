@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	DataDir  string
-	BindHost string
-	BindPort int
-	SiteDir  string
+	DataDir             string
+	BindHost            string
+	BindPort            int
+	SiteDir             string
+	UseOldNotebookStyle bool
 }
 
 func (config *Config) Validate() error {
