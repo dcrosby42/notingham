@@ -17,7 +17,7 @@ import (
 
 func Serve(config Config, done chan os.Signal) error {
 	// myRepo := protodb.NewFsNotebookRepo(config.DataDir)
-	repo := repo.New(config.DataDir)
+	myRepo := repo.New(config.DataDir)
 
 	router := gin.Default()
 
@@ -44,7 +44,7 @@ func Serve(config Config, done chan os.Signal) error {
 	router.GET("/api/v1/notebooks/:notebook/notes", func(c *gin.Context) {
 		var err error
 		var notebook db.Notebook
-		notebook, err = repo.GetNotebook(c.Param("notebook"))
+		notebook, err = myRepo.GetNotebook(c.Param("notebook"))
 		if err == nil {
 			var notes []db.Note
 			notes, err = notebook.AllNotes()
@@ -59,7 +59,7 @@ func Serve(config Config, done chan os.Signal) error {
 	// Create or update existing note
 	router.POST("/api/v1/notebooks/:notebook/notes/:id", func(c *gin.Context) {
 		var err error
-		notebook, err := repo.GetNotebook(c.Param("notebook"))
+		notebook, err := myRepo.GetNotebook(c.Param("notebook"))
 		if err == nil {
 			var update db.Note
 			if err := c.ShouldBindJSON(&update); err != nil {
@@ -79,7 +79,7 @@ func Serve(config Config, done chan os.Signal) error {
 	// Delete note
 	router.DELETE("/api/v1/notebooks/:notebook/notes/:id", func(c *gin.Context) {
 		var err error
-		notebook, err := repo.GetNotebook(c.Param("notebook"))
+		notebook, err := myRepo.GetNotebook(c.Param("notebook"))
 		if err == nil {
 			err = notebook.DeleteNote(c.Param("id"))
 			if err == nil {
