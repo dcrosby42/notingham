@@ -21,4 +21,7 @@ class ObjectStorage {
         }
     }
 }
+if (window) {
+    window.ObjectStorage = ObjectStorage
+}
 export default ObjectStorage

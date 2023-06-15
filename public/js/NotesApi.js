@@ -1,7 +1,7 @@
 class NotesApi {
     static notebook() {
         const defaultName = "Netskope"
-        let name = window.localStorage.getItem("NotesApi_notebook")
+        let name = window.localStorage.getItem("notes_api.notebook")
         if (!name || name === "") {
             name = defaultName
             NotesApi.setNotebook(name)
@@ -9,7 +9,7 @@ class NotesApi {
         return name
     }
     static setNotebook(name) {
-        window.localStorage.setItem("NotesApi_notebook", name)
+        window.localStorage.setItem("notes_api.notebook", name)
     }
 
     async getAll() {

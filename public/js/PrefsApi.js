@@ -26,6 +26,8 @@ class PrefsApi {
         this._storage.set("prefs.lastSelectedId", val)
         return val
     }
-
+}
+if (window) {
+    window.PrefsApi = PrefsApi
 }
 export default PrefsApi
