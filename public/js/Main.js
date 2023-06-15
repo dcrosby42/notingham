@@ -267,19 +267,12 @@ export default {
             if (!this.loaded) {
                 return []
             }
-            let notes = this.notes
             if (this.searchString.length > 0) {
                 const sres = this.noteSearcher.search(this.searchString)
-                // deleteme
-                for (let i = 0; i < sres.length; i++) {
-                    const element = sres[i];
-                    if (_.isUndefined(element)) {
-                        console.warn(`filteredNotes search='${this.searchString}': search result ${i} is undefined? sres=`, sres)
-                    }
-                }
                 return sres
+            } else {
+                return [] // this.notes
             }
-            return notes;
         },
         pinnedNotes() {
             return _.compact(_.map(this.pinnedNoteIds, id => this.notesById[id]))
