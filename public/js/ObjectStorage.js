@@ -15,8 +15,10 @@ class ObjectStorage {
     remove(key) {
         this.storage.removeItem(key)
     }
-    clear() {
-        this.storage.clear()
+    clear(really) {
+        if (really === true) {
+            this.storage.clear()
+        }
     }
 }
 export default ObjectStorage

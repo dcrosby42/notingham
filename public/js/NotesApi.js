@@ -1,11 +1,19 @@
 class NotesApi {
-    notebook() {
-        return "Netskope"
-        // return "Scratch"
-        //return "Personal"
+    static notebook() {
+        const defaultName = "Netskope"
+        let name = window.localStorage.getItem("NotesApi_notebook")
+        if (!name || name === "") {
+            name = defaultName
+            NotesApi.setNotebook(name)
+        }
+        return name
     }
+    static setNotebook(name) {
+        window.localStorage.setItem("NotesApi_notebook", name)
+    }
+
     async getAll() {
-        const resp = await fetch(`/api/v1/notebooks/${this.notebook()}/notes`)
+        const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes`)
         const notes = await resp.json()
         notes.forEach(note => {
             note.type = "note"
@@ -14,7 +22,7 @@ class NotesApi {
         return notes
     }
     async save(note) {
-        const resp = await fetch(`/api/v1/notebooks/${this.notebook()}/notes/${note.id}`, {
+        const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes/${note.id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: note.id, content: note.content })
@@ -44,5 +52,8 @@ class NotesApi {
         }
         return name
     }
+}
+if (window) {
+    window.NotesApi = NotesApi
 }
 export default NotesApi
