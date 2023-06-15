@@ -5,11 +5,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/dcrosby42/notingham/db"
 	"github.com/dcrosby42/notingham/util"
 	"github.com/samber/lo"
 )
+
+const NoteFileExt = ".md"
 
 type Notebook struct {
 	Dir string
@@ -36,8 +39,15 @@ func (me *Notebook) setupDirs() error {
 }
 
 func (me *Notebook) notePath(id string) string {
-	return path.Join(me.notesDir(), id)
+	return path.Join(me.notesDir(), id+NoteFileExt)
 }
+func (me *Notebook) idFromPath(notePath string) string {
+	return strings.TrimSuffix(filepath.Base(notePath), filepath.Ext(notePath))
+}
+func (me *Notebook) isNoteFile(notePath string) bool {
+	return filepath.Ext(notePath) == NoteFileExt
+}
+
 func (me *Notebook) notesDir() string {
 	return path.Join(me.Dir, "notes")
 }
@@ -98,9 +108,8 @@ func (me *Notebook) AllNoteIds() ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() {
-			id := filepath.Base(fullPath)
-			ids = append(ids, id)
+		if !info.IsDir() && me.isNoteFile(fullPath) {
+			ids = append(ids, me.idFromPath(fullPath))
 		}
 		return nil
 	})
