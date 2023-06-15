@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// NOTE: replaced by db.NoteId()
 func NoteId() string {
 	return uuid.New().String()
 }
