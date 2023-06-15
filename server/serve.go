@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/dcrosby42/notingham/db"
-	"github.com/dcrosby42/notingham/protodb"
+	"github.com/dcrosby42/notingham/repo"
 	"github.com/dcrosby42/notingham/site"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
 func Serve(config Config, done chan os.Signal) error {
-	repo := protodb.NewFsNotebookRepo(config.DataDir)
+	// myRepo := protodb.NewFsNotebookRepo(config.DataDir)
+	repo := repo.New(config.DataDir)
 
 	router := gin.Default()
 
@@ -42,9 +43,11 @@ func Serve(config Config, done chan os.Signal) error {
 	// Fetch all notes
 	router.GET("/api/v1/notebooks/:notebook/notes", func(c *gin.Context) {
 		var err error
-		notebook, err := repo.GetNotebook(c.Param("notebook"))
+		var notebook db.Notebook
+		notebook, err = repo.GetNotebook(c.Param("notebook"))
 		if err == nil {
-			notes, err := notebook.AllNotes()
+			var notes []db.Note
+			notes, err = notebook.AllNotes()
 			if err == nil {
 				c.JSON(200, notes)
 				return
@@ -64,7 +67,7 @@ func Serve(config Config, done chan os.Signal) error {
 				return
 			}
 			update.Id = c.Param("id")
-			_, err := notebook.SaveNote(update)
+			err := notebook.SaveNote(update)
 			if err == nil {
 				c.JSON(200, gin.H{})
 				return
@@ -78,7 +81,7 @@ func Serve(config Config, done chan os.Signal) error {
 		var err error
 		notebook, err := repo.GetNotebook(c.Param("notebook"))
 		if err == nil {
-			_, err = notebook.DeleteNote(c.Param("id"))
+			err = notebook.DeleteNote(c.Param("id"))
 			if err == nil {
 				c.JSON(200, gin.H{})
 				return

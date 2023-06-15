@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/dcrosby42/notingham/db"
+	"github.com/dcrosby42/notingham/fsdb"
 	. "github.com/dcrosby42/notingham/protodb"
 	"github.com/dcrosby42/notingham/server"
 	. "github.com/pepinns/go-hamcrest"
@@ -174,13 +175,17 @@ func NewNotebookFixture(t *testing.T) *NotebookFixture {
 	fix.NotebookDir = filepath.Join(fix.DataDir, fix.NotebookId)
 	err := os.MkdirAll(fix.NotebookDir, 0755)
 	Assert(t).That(err, IsNil())
-	notebook, err := NewFsNotebook(fix.NotebookDir)
+
+	notebook, err := fsdb.NewNotebook(fix.NotebookDir)
 	Assert(t).That(err, IsNil())
-	note1, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the content of note1"})
+	note1 := db.Note{Id: NoteId(), Content: "the content of note1"}
+	err = notebook.SaveNote(note1)
 	Assert(t).That(err, IsNil())
-	note2, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "the second note"})
+	note2 := db.Note{Id: NoteId(), Content: "the second note"}
+	err = notebook.SaveNote(note2)
 	Assert(t).That(err, IsNil())
-	note3, err := notebook.SaveNote(db.Note{Id: NoteId(), Content: "third time pays for all"})
+	note3 := db.Note{Id: NoteId(), Content: "third time pays for all"}
+	err = notebook.SaveNote(note3)
 	Assert(t).That(err, IsNil())
 
 	fix.Notes = make(map[string]db.Note)

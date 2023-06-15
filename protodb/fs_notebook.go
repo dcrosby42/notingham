@@ -78,7 +78,7 @@ func (me *FsNotebook) AllNoteIds() ([]string, error) {
 	return ret, nil
 }
 
-func (me *FsNotebook) SaveNote(incoming db.Note) (db.Note, error) {
+func (me *FsNotebook) SaveNote(incoming db.Note) error {
 	// Get square with the in-memory note store:
 	note, found := me.notes[incoming.Id]
 	if found {
@@ -100,7 +100,7 @@ func (me *FsNotebook) SaveNote(incoming db.Note) (db.Note, error) {
 	// compute the path is it would be, given current note content:
 	path, err := newRelFilePath(note, me.Dir, "notes")
 	if err != nil {
-		return db.Note{}, err
+		return err
 	}
 	_, pathId := me.pathIds.LookupById(note.Id)
 	if pathId == nil {
@@ -119,7 +119,7 @@ func (me *FsNotebook) SaveNote(incoming db.Note) (db.Note, error) {
 	fname := filepath.Join(me.Dir, pathId.Path)
 	err = ioutil.WriteFile(fname, []byte(note.Content), 0644)
 	if err != nil {
-		return db.Note{}, err
+		return err
 	}
 
 	if fileToRemove != "" {
@@ -130,14 +130,14 @@ func (me *FsNotebook) SaveNote(incoming db.Note) (db.Note, error) {
 	if doSavePathIds {
 		// persist path ids to disk
 		if err := me.savePathIds(); err != nil {
-			return db.Note{}, err
+			return err
 		}
 	}
 
-	return *note, nil
+	return nil
 }
 
-func (me *FsNotebook) DeleteNote(id string) (db.Note, error) {
+func (me *FsNotebook) DeleteNote(id string) error {
 	// Remove from note cache
 	note, found := me.notes[id]
 	if found {
@@ -154,22 +154,22 @@ func (me *FsNotebook) DeleteNote(id string) (db.Note, error) {
 
 		// persist path-id index to disk
 		if err := me.savePathIds(); err != nil {
-			return db.Note{}, err
+			return err
 		}
 
 		// Trash the file
 		err := os.MkdirAll(filepath.Join(me.Dir, "trash"), 0755)
 		if err != nil {
-			return db.Note{}, err
+			return err
 		}
 		originalFname := filepath.Join(me.Dir, pathId.Path)
 		trashedFilename := filepath.Join(me.Dir, "trash", filepath.Base(pathId.Path))
 		err = os.Rename(originalFname, trashedFilename)
 		if err != nil {
-			return db.Note{}, err
+			return err
 		}
 	}
-	return *note, nil
+	return nil
 }
 
 func (me *FsNotebook) pathIdsFile() string {

@@ -1,6 +1,7 @@
 class NotesApi {
     notebook() {
-        return "Netskope"
+        // return "Netskope"
+        return "Scratch"
     }
     async getAll() {
         const resp = await fetch(`/api/v1/notebooks/${this.notebook()}/notes`)

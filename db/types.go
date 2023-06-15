@@ -10,8 +10,8 @@ type Notebook interface {
 	AllNotes() ([]Note, error)
 	AllNoteIds() ([]string, error)
 	GetNote(id string) (Note, error)
-	SaveNote(Note) (Note, error)
-	DeleteNote(string) (Note, error)
+	SaveNote(Note) error
+	DeleteNote(string) error
 }
 
 type Note struct {
