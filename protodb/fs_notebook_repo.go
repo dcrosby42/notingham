@@ -29,3 +29,8 @@ func (me *FsNotebookRepo) GetNotebook(id string) (db.Notebook, error) {
 	}
 	return notebook, nil
 }
+
+func (*FsNotebookRepo) ListNotebookNames() ([]string, error) {
+	// this class is gonna be removed soon, so nevermind this
+	return nil, nil
+}

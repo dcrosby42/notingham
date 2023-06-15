@@ -4,6 +4,7 @@ import "github.com/google/uuid"
 
 type Repo interface {
 	GetNotebook(string) (Notebook, error)
+	ListNotebookNames() ([]string, error)
 }
 
 type Notebook interface {
