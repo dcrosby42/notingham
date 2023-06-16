@@ -1,3 +1,4 @@
+import MessageBus from "./MessageBus.js"
 class NotesApi {
     static notebook() {
         const defaultName = "Netskope"
@@ -13,22 +14,30 @@ class NotesApi {
     }
 
     async getAll() {
-        const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes`)
-        const notes = await resp.json()
-        notes.forEach(note => {
-            note.type = "note"
-            this.updateNoteName(note)
-        })
-        return notes
+        try {
+            const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes`)
+            const notes = await resp.json()
+            notes.forEach(note => {
+                note.type = "note"
+                this.updateNoteName(note)
+            })
+            return notes
+        } catch (e) {
+            MessageBus.Default.publish({ event: "NotesApi.error", data: e })
+        }
     }
     async save(note) {
-        const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes/${note.id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: note.id, content: note.content })
-        })
-        const rbody = await resp.json()
-        // ? rbody
+        try {
+            const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes/${note.id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: note.id, content: note.content })
+            })
+            const rbody = await resp.json()
+            // ? rbody
+        } catch (e) {
+            MessageBus.Default.publish({ event: "NotesApi.error", data: e })
+        }
     }
 
     updateNoteName(note) {

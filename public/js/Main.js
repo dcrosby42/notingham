@@ -1,6 +1,7 @@
 import MyEditor from "./MyEditor.js"
 import Data from "./Data.js"
 import NoteSearcher from "./NoteSearcher.js"
+import MessageBus from "./MessageBus.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import { CommandPalette, CommandPaletteModel } from "./CommandPalette.js"
 
@@ -101,6 +102,20 @@ export default {
         Data.Prefs.pinnedNoteIds = this.pinnedNoteIds // save em back just in case
 
         this.selectedId = Data.Prefs.lastSelectedId
+
+        MessageBus.subscribe({
+            event: "NotesApi.error",
+            token: "mainSubs",
+            callback: data => {
+                console.error("Main: Seeing the NotesApiError:", data)
+            }
+        })
+    },
+    unmounted() {
+        MessageBus.unsubscribe({
+            event: "dude",
+            token: "main.dude",
+        })
     },
     watch: {
         // DELETEME
