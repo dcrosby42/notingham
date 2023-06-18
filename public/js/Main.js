@@ -85,6 +85,7 @@ export default {
             noteSearcher: null,
             pinnedNoteIds: [],
             editorMode: "wysiwyg",
+            failedSaves: {},
         }
     },
     created() {
@@ -103,25 +104,52 @@ export default {
 
         this.selectedId = Data.Prefs.lastSelectedId
 
+        const store = new ObjectStorage(window.localStorage)
+
         MessageBus.subscribe({
             event: "NotesApi.error",
             token: "mainSubs",
             callback: data => {
-                console.error("Main: Seeing the NotesApiError:", data)
+                if (data.method === "save") {
+                    const note = data.note
+                    const error = data.error
+                    const msg = `FAILED TO SAVE NOTE ${(note && note.id) || "??"} '${NotesApi.titleForNote(note)}'`
+                    console.error(msg, error);
+                    if (note) {
+                        const tstamp = (new Date()).toString()
+                        const title = NotesApi.titleForNote(note)
+                        store.objectSet("FAILED_SAVES", note.id, { title, note, tstamp, error })
+                    }
+                    this.failedSaves = store.get("FAILED_SAVES")
+                    alert(msg)
+                } else if (data.method === "getAll") {
+                    console.error("FAIED getAll():", data.error)
+                }
             }
         })
+        MessageBus.subscribe({
+            event: "NotesApi.saved",
+            token: "mainSubs",
+            callback: data => {
+                const note = data.note
+                if (store.objectGet("FAILED_SAVES", note.id)) {
+                    const msg = `Clearing failed-save state for ${(note && note.id) || "??"} '${NotesApi.titleForNote(note)}' -- Saved successfully just now`
+                    console.log(msg)
+                    store.objectDelete("FAILED_SAVES", data.note.id)
+                }
+                this.failedSaves = store.get("FAILED_SAVES")
+            }
+        })
+
+        this.failedSaves = store.get("FAILED_SAVES")
     },
     unmounted() {
-        MessageBus.unsubscribe({
-            event: "dude",
-            token: "main.dude",
-        })
+        MessageBus.unsubscribe({ token: "mainSubs" })
     },
     watch: {
         // DELETEME
         // "commandPaletteModel.input": function(cpm) {
-        //     console.log("watch cpm",cpm)
-        // }
+        //     cons        // }
         selectedId: function (newId, oldId) {
             if (newId !== Data.Prefs.lastSelectedId) {
                 Data.Prefs.lastSelectedId = newId
@@ -132,9 +160,11 @@ export default {
         noteItemStyle(note) {
             const active = note.id == this.selectedId
             return {
+                'note-link': true,
                 'has-text-light': this.darkMode,
                 'has-background-dark': this.darkMode && !active,
                 'is-active': active,
+                'save-error': _.has(this.failedSaves, note.id),
             }
         },
         trackChangedNote(note) {
@@ -328,6 +358,9 @@ export default {
                 "has-background-dark": this.darkMode,
                 "has-text-white": this.darkMode,
             }
+        },
+        errorCount() {
+            return _.size(this.failedSaves)
         }
     },
     template: `
@@ -339,6 +372,9 @@ export default {
           <p class="menu-label">
             Notingham
           </p>
+          <div v-if="errorCount > 0" style="color: red">
+              {{errorCount}} SAVE ERRORS
+          </div>
           <!-- "New" button -->
           <div>
               <button class="button is-small" @click="newNote">New</button>

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dcrosby42/notingham/db"
@@ -70,6 +71,11 @@ func Serve(config Config, done chan os.Signal) error {
 			var update db.Note
 			if err := c.ShouldBindJSON(&update); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+			// Allow hand-testing of save failures
+			if strings.Contains(update.Content, "NOTINGHAM-TEST-SAVE-ERROR") {
+				c.JSON(500, gin.H{"error": "Test mode triggered: failing save because content contains NOTINGHAM_TEST_SAVE_ERROR"})
 				return
 			}
 			update.Id = c.Param("id")

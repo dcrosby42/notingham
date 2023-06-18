@@ -32,12 +32,17 @@ export default class MessageBus {
             })
         }
     }
+
     publish({ event, data }) {
         const subs = this.channels[event]
         if (_.size(subs) == 0) {
             // No subscribers. Attempt to publish to special channel
             // TODO subs = this.channels[MessageBus.UnhandledEvent]
-            console.warn(`MessageBus: publish() to unsubscribed event ${event}:`, data)
+
+            // Just in case we're passing around error-ish things that nobody's listening for
+            if (event.match(/error/i) || _.get(data, "error")) {
+                console.error(`MessageBus: publish() unsubscribed event ${event} looks like it be an ignored error:`, data)
+            }
         }
         if (_.size(subs) > 0) {
             _.forEach(subs, callback => { callback(data) })

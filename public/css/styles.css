@@ -48,9 +48,14 @@
     background-color: #66B;
 }
 
-.is-active {
+.note-link.is-active {
     background: #66b;
 }
+
+.note-link.save-error {
+    color: red !important;
+}
+
 
 /* .nowrap {
     white-space: nowrap;

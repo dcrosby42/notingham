@@ -23,7 +23,10 @@ class NotesApi {
             })
             return notes
         } catch (e) {
-            MessageBus.Default.publish({ event: "NotesApi.error", data: e })
+            MessageBus.Default.publish({
+                event: "NotesApi.error",
+                data: { method: "getAll" }
+            })
         }
     }
     async save(note) {
@@ -33,20 +36,39 @@ class NotesApi {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: note.id, content: note.content })
             })
-            const rbody = await resp.json()
-            // ? rbody
+            if (resp.ok) {
+                // const _ = await resp.json()
+                MessageBus.Default.publish({
+                    event: "NotesApi.saved",
+                    data: { method: "save", note }
+                })
+            } else {
+                const body = await resp.text()
+                const status = resp.status
+                MessageBus.Default.publish({
+                    event: "NotesApi.error",
+                    data: { method: "save", note, status, error: `Server responded ${status}: ${body}` }
+                })
+            }
         } catch (e) {
-            MessageBus.Default.publish({ event: "NotesApi.error", data: e })
+            MessageBus.Default.publish({
+                event: "NotesApi.error",
+                data: { method: "save", note, error: e }
+            })
         }
     }
 
     updateNoteName(note) {
         if (note && note.content) {
-            note.name = this.computeNoteTitle(note.content)
+            note.name = NotesApi.titleForNote(note)
         }
     }
 
-    computeNoteTitle(content = "") {
+    static titleForNote(note) {
+        return NotesApi.computeNoteTitle(note.content)
+    }
+
+    static computeNoteTitle(content = "") {
         let name = ""
         const lines = content.split("\n");
         if (lines.length > 0) {
