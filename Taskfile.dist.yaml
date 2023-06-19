@@ -6,15 +6,16 @@ tasks:
     cmds:
       - go test ./...
 
+  assets:
+    desc: Embed web assets (html/js/css) into site/assets.go
+    cmds:
+      - go-assets-builder -p site -o site/assets.go -s /public public
+
   install:
-    desc: Local installation
+    desc: Build and install notingham binary
+    deps: [assets]
     cmds:
       - go install
-
-  build:
-    desc: Build
-    cmds:
-      - go build ./...
 
   run:
     deps: [install]
@@ -23,13 +24,13 @@ tasks:
       - notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks
 
   run-local:
-    deps: [install]
+    deps: [assets]
     desc: Install and launch notingham server, but loading web assets directly from the public site dir
     cmds:
-      - notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks --site-dir public
+      - go run main.go server --host 127.0.0.1 --port 9000 --data-dir notebooks --site-dir public
 
-  run-old:
-    deps: [install]
-    desc: Install and launch notingham server, using OLD DB IMPL, loading web assets directly from the public site dir
-    cmds:
-      - notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks --site-dir public --old-style
+  # run-old:
+  #   deps: [install]
+  #   desc: Install and launch notingham server, using OLD DB IMPL, loading web assets directly from the public site dir
+  #   cmds:
+  #     - notingham server --host 127.0.0.1 --port 9000 --data-dir notebooks --site-dir public --old-style
