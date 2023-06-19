@@ -1,4 +1,62 @@
 
+const TestCommands = [
+    {
+        name: "delete_note",
+        title: "Delete Note",
+        description: "Delete the currently editing note"
+    },
+    {
+        name: "star_wars",
+        title: "Play Fanfare",
+        description: "Play the Star Wars title theme"
+    }
+]
+
+class CommandSearcher {
+    constructor(commands) {
+        this.commands = commands
+        commands.forEach((cmd, i) => { cmd.id = i })
+        this.commandsById = _.keyBy(this.commands, "id")
+        this._reset()
+    }
+    search(str) {
+        if (!str || str.length === 0) {
+            return [...this.commands]
+        } else {
+            const searchRes = this.searchModel.search(str)
+            return _(searchRes)
+                .flatMap(sr => sr.result)
+                .uniq()
+                .map(id => this.commandsById[id])
+                .value()
+        }
+    }
+    add(command) {
+        this.searchModel.add(command)
+        this.commandsById[command.id] = command
+    }
+    update(command) {
+        this.searchModel.update(command)
+    }
+    remove(command) {
+        this.searchModel.remove(command.id)
+        delete this.commandsById[command.id]
+    }
+
+
+    _reset() {
+        this.searchModel = new FlexSearch.Document({
+            tokenize: "forward",
+            document: {
+                id: "id",
+                index: ["title", "name", "description"],
+            },
+            preset: "score"
+        });
+        this.commands.forEach(c => this.searchModel.add(c))
+    }
+}
+
 const CommandPalette = {
     props: {
         searcher: { type: Object, required: true }
@@ -11,24 +69,42 @@ const CommandPalette = {
             searchString: "",
             selectedIndex: 0,
             maxResults: 50,
+            commandSearcher: null,
         }
+    },
+    mounted() {
+        this.commandSearcher = Vue.shallowRef(new CommandSearcher(TestCommands))
+        console.log("Mounted, commandSearcher", this.commandSearcher)
     },
 
     computed: {
         choices() {
             let items = []
-            if (this.searchString && this.searchString.length > 0) {
-                items.push(...this.searcher.search(this.searchString))
+            if (this.searchString.startsWith(">")) {
+                const term = this.searchString.slice(1).trimStart()
+                const commands = this.commandSearcher.search(term)
+                return commands.map(cmd => {
+                    return {
+                        kind: "command",
+                        text: cmd.title,
+                        data: cmd,
+                    }
+                })
             } else {
-                items.push(...this.searcher.search(null))
-            }
-            return _.take(items, this.maxResults).map(item => {
-                return {
-                    kind: this.searcher.getKind(item),
-                    text: this.searcher.getText(item),
-                    data: item,
+                let notes = []
+                if (this.searchString.length > 0) {
+                    notes.push(...this.searcher.search(this.searchString))
+                } else {
+                    notes.push(...this.searcher.search(null))
                 }
-            })
+                return _.take(notes, this.maxResults).map(note => {
+                    return {
+                        kind: "note",
+                        text: note.name,
+                        data: note,
+                    }
+                })
+            }
         },
         selectedChoice() {
             if (this.selectedIndex >= 0 && this.selectedIndex <= this.lastIndex) {
@@ -47,6 +123,7 @@ const CommandPalette = {
         },
     },
     methods: {
+
         focus() {
             this.$refs.commandInput.focus()
         },
@@ -114,22 +191,7 @@ const CommandPalette = {
         </div>
         
       </div>
-    })`
+    `
 }
 
-const CommandPaletteModel = {}
-CommandPaletteModel.init = () => {
-    return {
-        input: "",
-        placeholder: "Search / Command",
-        items: [
-            // { text: "Example" },
-            // { text: "Example" },
-            // { text: "Example" },
-            // { text: "Example" },
-            // { text: "Example" },
-        ],
-    }
-}
-
-export { CommandPalette, CommandPaletteModel }
+export default CommandPalette

@@ -3,7 +3,7 @@ import Data from "./Data.js"
 import NoteSearcher from "./NoteSearcher.js"
 import MessageBus from "./MessageBus.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
-import { CommandPalette, CommandPaletteModel } from "./CommandPalette.js"
+import CommandPalette from "./CommandPalette.js"
 
 import { arrayMove } from "./utils.js"
 
@@ -113,17 +113,19 @@ export default {
                 if (data.method === "save") {
                     const note = data.note
                     const error = data.error
-                    const msg = `FAILED TO SAVE NOTE ${(note && note.id) || "??"} '${NotesApi.titleForNote(note)}'`
+                    const msg = `FAILED TO SAVE NOTE ${(note && note.id) || "??"} '${note.name}'`
                     console.error(msg, error);
                     if (note) {
                         const tstamp = (new Date()).toString()
-                        const title = NotesApi.titleForNote(note)
-                        store.objectSet("FAILED_SAVES", note.id, { title, note, tstamp, error })
+                        store.objectSet("FAILED_SAVES", note.id, { name: note.name, note, tstamp, error })
                     }
                     this.failedSaves = store.get("FAILED_SAVES")
                     alert(msg)
+                } else if (data.method === "delete") {
+                    console.error("FAILED delete():", data)
+
                 } else if (data.method === "getAll") {
-                    console.error("FAIED getAll():", data.error)
+                    console.error("FAILED getAll():", data.error)
                 }
             }
         })
@@ -133,11 +135,18 @@ export default {
             callback: data => {
                 const note = data.note
                 if (store.objectGet("FAILED_SAVES", note.id)) {
-                    const msg = `Clearing failed-save state for ${(note && note.id) || "??"} '${NotesApi.titleForNote(note)}' -- Saved successfully just now`
+                    const msg = `Clearing failed-save state for ${(note && note.id) || "??"} '${note.name}' -- Saved successfully just now`
                     console.log(msg)
                     store.objectDelete("FAILED_SAVES", data.note.id)
                 }
                 this.failedSaves = store.get("FAILED_SAVES")
+            }
+        })
+        MessageBus.subscribe({
+            event: "NotesApi.deleted",
+            token: "mainSubs",
+            callback: data => {
+                data.note
             }
         })
 
@@ -147,9 +156,6 @@ export default {
         MessageBus.unsubscribe({ token: "mainSubs" })
     },
     watch: {
-        // DELETEME
-        // "commandPaletteModel.input": function(cpm) {
-        //     cons        // }
         selectedId: function (newId, oldId) {
             if (newId !== Data.Prefs.lastSelectedId) {
                 Data.Prefs.lastSelectedId = newId
@@ -193,6 +199,16 @@ export default {
             // deferred persistence:
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
+        },
+        async deleteNote(note) {
+            // delete on the server
+            await Data.Notes.delete(note)
+            // deselect
+            this.selectedId = null
+            // remove from the note list
+            _.pull(this.notes, note)
+            // remove from the search index
+            this.noteSearcher.remove(note)
         },
         selectPinnedNote(i) {
             const note = this.pinnedNotes[i]
@@ -300,7 +316,24 @@ export default {
         commandPaletteSelection(choice) {
             this.closeCommandPalette()
             if (choice.kind === "note") {
+                //
+                // A Note was selected from the Palette
+                //
                 this.selectedId = choice.data.id
+
+            } else if (choice.kind === "command") {
+                if (choice.data.name === "delete_note") {
+                    //
+                    // delete_note
+                    //
+                    if (confirm("DELETE NOTE?\n\"" + this.selectedNote.name + "\"")) {
+                        this.deleteNote(this.selectedNote)
+                    } else {
+                        console.log("Cancel delete")
+                    }
+                } else {
+                    console.log("Unhandled command?", choice)
+                }
             }
         },
     },
@@ -308,15 +341,19 @@ export default {
         notesById() {
             return _.keyBy(this.notes, "id")
         },
+        noteCount() {
+            console.log("noteCount recalc: ") // deleteme
+            return _.size(this.notes)
+        },
         filteredNotes() {
             if (!this.loaded) {
                 return []
             }
+            const _ = this.noteCount // KEEPME: ignorant trick to force filteredNotes to react to changes in this.notes array
             if (this.searchString.length > 0) {
-                const sres = this.noteSearcher.search(this.searchString)
-                return sres
+                return this.noteSearcher.search(this.searchString)
             } else {
-                return [] // this.notes
+                return []
             }
         },
         pinnedNotes() {

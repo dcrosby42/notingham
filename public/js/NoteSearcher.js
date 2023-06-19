@@ -10,17 +10,11 @@ export default class NoteSearcher {
         } else {
             const searchRes = this.searchModel.search(str)
             return _(searchRes)
-                .flatMap(sr => sr.result.map(id => this.notesById[id]))
+                .flatMap(sr => sr.result)
+                .uniq()
+                .map(id => this.notesById[id])
                 .value()
         }
-    }
-    getText(note) {
-        if (note) {
-            return note.name
-        }
-    }
-    getKind(note) {
-        return "note"
     }
     add(note) {
         this.searchModel.add(note)
@@ -30,13 +24,19 @@ export default class NoteSearcher {
         this.searchModel.update(note)
     }
 
+    remove(note) {
+        this.searchModel.remove(note.id)
+        delete this.notesById[note.id]
+    }
+
     _reset() {
         this.searchModel = new FlexSearch.Document({
             tokenize: "forward",
             document: {
                 id: "id",
-                index: ["content"],
-            }
+                index: ["name", "content"],
+            },
+            preset: "score"
         });
         this.notes.forEach(n => this.searchModel.add(n))
     }

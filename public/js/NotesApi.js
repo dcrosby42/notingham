@@ -58,6 +58,34 @@ class NotesApi {
         }
     }
 
+    async delete(note) {
+        try {
+            const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes/${note.id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                // body: JSON.stringify({ id: note.id, content: note.content })
+            })
+            if (resp.ok) {
+                MessageBus.Default.publish({
+                    event: "NotesApi.deleted",
+                    data: { method: "delete", note }
+                })
+            } else {
+                const body = await resp.text()
+                const status = resp.status
+                MessageBus.Default.publish({
+                    event: "NotesApi.error",
+                    data: { method: "delete", note, status, error: `Server responded ${status}: ${body}` }
+                })
+            }
+        } catch (e) {
+            MessageBus.Default.publish({
+                event: "NotesApi.error",
+                data: { method: "delete", note, error: e }
+            })
+        }
+    }
+
     updateNoteName(note) {
         if (note && note.content) {
             note.name = NotesApi.titleForNote(note)

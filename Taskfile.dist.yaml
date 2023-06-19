@@ -11,6 +11,11 @@ tasks:
     cmds:
       - go install
 
+  build:
+    desc: Build
+    cmds:
+      - go build ./...
+
   run:
     deps: [install]
     desc: Install and launch notingham server against the notebooks dir
