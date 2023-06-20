@@ -12,12 +12,12 @@ const SAVE_DELAY = 1000
 const DefaultKeybinds = {
     "Escape": "closeCommandPalette",
     "$mod+KeyP": "toggleCommandPalette",
+    "Shift+$mod+KeyP": ["openCommandPalette", { mode: "command" }],
+    "F1": ["openCommandPalette", { mode: "command" }],
     "$mod+KeyM": "toggleEditorMode",
     "$mod+KeyK ": "addUrl",
-    // "Shift+$mod+KeyK ": "toggleLink",
     "Shift+Control+KeyT ": "toggleTask",
     "Shift+Control+KeyN": "newNote",
-    // "Shift+$mod+KeyP": "toggleCommandPalette",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
     "Shift+Control+KeyD": "toggleDarkMode",
     "Shift+Control+KeyF": "toggleToolbarVisible",
@@ -37,11 +37,6 @@ const DefaultKeybinds = {
     "Shift+Control+p j": "movePinnedNoteDown",
     // "$mod+k p ArrowDown": "movePinnedNoteDown",
 }
-
-const DefaultPinnedNoteIds = [
-    "defedc86-8d30-424b-a7c7-66ab9b980cfb", // TODO
-    "164b95bf-566c-4a65-95e9-e96492d09372", // Group Vars Getting Out
-]
 
 function bindKeys({ from, target, bindings }) {
     tinykeys(from, _.mapValues(bindings, (action, bindingExpr) => {
@@ -86,6 +81,7 @@ export default {
             pinnedNoteIds: [],
             editorMode: "wysiwyg",
             failedSaves: {},
+            navRecents: [],
         }
     },
     created() {
@@ -99,10 +95,10 @@ export default {
 
         bindKeys({ from: window, target: this, bindings: DefaultKeybinds })
 
-        this.pinnedNoteIds = Data.Prefs.pinnedNotes || _.clone(DefaultPinnedNoteIds)
+        this.pinnedNoteIds = Data.Prefs.pinnedNotes || []
         Data.Prefs.pinnedNoteIds = this.pinnedNoteIds // save em back just in case
 
-        this.selectedId = Data.Prefs.lastSelectedId
+        this.selectNote(Data.Prefs.lastSelectedId)
 
         const store = new ObjectStorage(window.localStorage)
 
@@ -195,7 +191,7 @@ export default {
             Data.Notes.updateNoteName(note)
             this.noteSearcher.add(note)
             this.notes.push(note)
-            this.selectedId = note.id
+            this.selectNote(note.id)
             // deferred persistence:
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
@@ -213,7 +209,7 @@ export default {
         selectPinnedNote(i) {
             const note = this.pinnedNotes[i]
             if (note) {
-                this.selectedId = note.id
+                this.selectNote(note.id)
             } else {
                 console.warn("selectPinnedNote(): no pinned note at", i)
             }
@@ -272,7 +268,6 @@ export default {
             } else {
                 this.editorMode = 'wysiwyg'
             }
-            console.log("editorMode", this.editorMode)
         },
         addUrl() {
             const doIt = () => this.$refs.myEditor.startAddLink()
@@ -291,15 +286,22 @@ export default {
         toggleTask() {
             this.$refs.myEditor.toggleTask()
         },
-        openCommandPalette() {
-            if (!this.commandPaletteShowing) {
+        openCommandPalette({ mode } = {}) {
+            let initSearchString = ""
+            if (mode && mode == "command") {
+                initSearchString = ">"
+            }
+            if (this.commandPaletteShowing) {
+                this.$refs.commandPalette.searchString = initSearchString
+            } else {
                 this.commandPaletteShowing = true
                 this.$nextTick(function () {
                     if (this.$refs.commandPalette) {
                         this.$refs.commandPalette.focus()
                     } else {
-                        console.warn("can't focus command palette")
+                        console.warn("can't focus command palette, $refs.commandPalette not set?")
                     }
+                    this.$refs.commandPalette.searchString = initSearchString
                 })
             }
         },
@@ -313,13 +315,16 @@ export default {
                 this.openCommandPalette()
             }
         },
+        selectNote(noteId) {
+            this.selectedId = noteId
+        },
         commandPaletteSelection(choice) {
             this.closeCommandPalette()
             if (choice.kind === "note") {
                 //
                 // A Note was selected from the Palette
                 //
-                this.selectedId = choice.data.id
+                this.selectNote(choice.data.id)
 
             } else if (choice.kind === "command") {
                 if (choice.data.name === "delete_note") {
@@ -342,7 +347,6 @@ export default {
             return _.keyBy(this.notes, "id")
         },
         noteCount() {
-            console.log("noteCount recalc: ") // deleteme
             return _.size(this.notes)
         },
         filteredNotes() {
@@ -420,7 +424,7 @@ export default {
           <!-- Pinned notes -->
           <div :class="darkModeStyles">
             <ul>
-                <li v-for="note,i in pinnedNotes" @click="selectedId = note.id" class="leftbar-notelist-note">{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                <li v-for="note,i in pinnedNotes" @click="selectNote(note.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a></li>
             </ul>
           </div>
 
@@ -432,7 +436,7 @@ export default {
           <!-- Filtered list -->
           <div :class="darkModeStyles" style="overflow: auto">
             <ul style="overflow:auto">
-                <li v-for="note in filteredNotes" @click="selectedId = note.id" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                <li v-for="note in filteredNotes" @click="selectNote(note.id)" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
             </ul>
           </div>
       </div>

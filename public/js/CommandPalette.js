@@ -1,61 +1,19 @@
+import CommandSearcher from "./CommandSearcher.js"
 
+// TODO: TestCommands and CommandSearcher are prototypical! Need design/refactor!
 const TestCommands = [
     {
         name: "delete_note",
         title: "Delete Note",
         description: "Delete the currently editing note"
     },
-    {
-        name: "star_wars",
-        title: "Play Fanfare",
-        description: "Play the Star Wars title theme"
-    }
+    // {
+    //     name: "star_wars",
+    //     title: "Play Fanfare",
+    //     description: "Play the Star Wars title theme"
+    // }
 ]
 
-class CommandSearcher {
-    constructor(commands) {
-        this.commands = commands
-        commands.forEach((cmd, i) => { cmd.id = i })
-        this.commandsById = _.keyBy(this.commands, "id")
-        this._reset()
-    }
-    search(str) {
-        if (!str || str.length === 0) {
-            return [...this.commands]
-        } else {
-            const searchRes = this.searchModel.search(str)
-            return _(searchRes)
-                .flatMap(sr => sr.result)
-                .uniq()
-                .map(id => this.commandsById[id])
-                .value()
-        }
-    }
-    add(command) {
-        this.searchModel.add(command)
-        this.commandsById[command.id] = command
-    }
-    update(command) {
-        this.searchModel.update(command)
-    }
-    remove(command) {
-        this.searchModel.remove(command.id)
-        delete this.commandsById[command.id]
-    }
-
-
-    _reset() {
-        this.searchModel = new FlexSearch.Document({
-            tokenize: "forward",
-            document: {
-                id: "id",
-                index: ["title", "name", "description"],
-            },
-            preset: "score"
-        });
-        this.commands.forEach(c => this.searchModel.add(c))
-    }
-}
 
 const CommandPalette = {
     props: {
@@ -74,11 +32,12 @@ const CommandPalette = {
     },
     mounted() {
         this.commandSearcher = Vue.shallowRef(new CommandSearcher(TestCommands))
-        console.log("Mounted, commandSearcher", this.commandSearcher)
+        console.log("CommandPalette: mounted")
     },
 
     computed: {
         choices() {
+            console.log("CommandPalette: recalc choices")
             let items = []
             if (this.searchString.startsWith(">")) {
                 const term = this.searchString.slice(1).trimStart()
@@ -124,8 +83,11 @@ const CommandPalette = {
     },
     methods: {
 
-        focus() {
+        focus({ text } = {}) {
             this.$refs.commandInput.focus()
+            if (text) {
+                this.$refs.commandInput.value = text
+            }
         },
         handleKeydown(e) {
             if (e.key == "ArrowDown") {
