@@ -36,6 +36,9 @@ const DefaultKeybinds = {
     "Shift+Control+p k": "movePinnedNoteUp",
     "Shift+Control+p j": "movePinnedNoteDown",
     // "$mod+k p ArrowDown": "movePinnedNoteDown",
+    "Shift+Control+BracketLeft": "navBack",
+    "Shift+Control+BracketRight": "navForward",
+
 }
 
 function bindKeys({ from, target, bindings }) {
@@ -82,6 +85,7 @@ export default {
             editorMode: "wysiwyg",
             failedSaves: {},
             navRecents: [],
+            navIndex: 0,
         }
     },
     created() {
@@ -97,6 +101,9 @@ export default {
 
         this.pinnedNoteIds = Data.Prefs.pinnedNotes || []
         Data.Prefs.pinnedNoteIds = this.pinnedNoteIds // save em back just in case
+
+        this.navRecents = Data.Prefs.navRecents || []
+        this.navIndex = Data.Prefs.navIndex || 0
 
         this.selectNote(Data.Prefs.lastSelectedId)
 
@@ -317,6 +324,7 @@ export default {
         },
         selectNote(noteId) {
             this.selectedId = noteId
+            this.updateNavHistory(noteId)
         },
         commandPaletteSelection(choice) {
             this.closeCommandPalette()
@@ -340,6 +348,42 @@ export default {
                     console.log("Unhandled command?", choice)
                 }
             }
+        },
+        updateNavHistory(noteId) {
+            if (_.includes(this.navRecents, noteId)) {
+                // Promote already-visited doc id
+                const loc = _.indexOf(this.navRecents, noteId)
+                arrayMove(this.navRecents, loc, this.navRecents.length - 1)
+            } else {
+                // new doc id
+                this.navRecents.push(noteId)
+            }
+
+            this.navIndex = this.navRecents.length - 1
+
+            // Constrain nav history size:
+            const max = 100
+            const over = this.navRecents.length - max
+            if (over > 0) {
+                this.navRecents = this.navRecents(over)
+            }
+            Data.Prefs.navRecents = this.navRecents
+        },
+        navBack() {
+            this.navIndex = _.clamp(this.navIndex - 1, 0, this.navRecents.length - 1)
+            const noteId = this.navRecents[this.navIndex]
+            if (noteId && noteId.length) {
+                this.selectedId = noteId
+            }
+            Data.Prefs.navIndex = this.navIndex
+        },
+        navForward() {
+            this.navIndex = _.clamp(this.navIndex + 1, 0, this.navRecents.length - 1)
+            const noteId = this.navRecents[this.navIndex]
+            if (noteId && noteId.length) {
+                this.selectedId = noteId
+            }
+            Data.Prefs.navIndex = this.navIndex
         },
     },
     computed: {
@@ -414,7 +458,7 @@ export default {
             Notingham
           </p>
           <div v-if="errorCount > 0" style="color: red">
-              {{errorCount}} SAVE ERRORS
+              {{errorCount}} SAVE ERRORS - see Main.failedSaves
           </div>
           <!-- "New" button -->
           <div>

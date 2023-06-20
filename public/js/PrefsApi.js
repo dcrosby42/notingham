@@ -26,6 +26,20 @@ class PrefsApi {
         this._storage.set("prefs.lastSelectedId", val)
         return val
     }
+    get navRecents() {
+        return this._storage.get("prefs.navRecents")
+    }
+    set navRecents(val) {
+        this._storage.set("prefs.navRecents", val)
+        return val
+    }
+    get navIndex() {
+        return this._storage.get("prefs.navIndex")
+    }
+    set navIndex(val) {
+        this._storage.set("prefs.navIndex", val)
+        return val
+    }
 }
 if (window) {
     window.PrefsApi = PrefsApi
