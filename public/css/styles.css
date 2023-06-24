@@ -130,3 +130,13 @@
 .toastui-editor.md-mode .ProseMirror .toastui-editor-md-heading.toastui-editor-md-heading6 {
     font-size: 22px;
 }
+
+/*
+BOARD SPIKE
+*/
+
+.board-spike-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
