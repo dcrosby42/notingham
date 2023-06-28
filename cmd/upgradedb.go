@@ -39,7 +39,7 @@ func UpgradeNotesDir(notesDir string) error {
 		if !info.IsDir() && filepath.Ext(info.Name()) == ".md" {
 			oldPath := filepath.Join(notesDir, info.Name())
 			id := db.NoteId()
-			newPath := filepath.Join(notesDir, id)
+			newPath := filepath.Join(notesDir, id) + ".md"
 			// fmt.Printf("%s %s %v\n", filepath.Ext(info.Name()), info.Name(), info.IsDir())
 			fmt.Printf("Renaming: %s => %s\n", oldPath, newPath)
 			err := os.Rename(oldPath, newPath)
