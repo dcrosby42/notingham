@@ -194,7 +194,8 @@ export default {
             await Data.Notes.save(note)
         },
         newNote() {
-            const note = { id: uuidv4(), content: "A new note!" }
+            const dateStr = _.take(_.drop((new Date()).toString().split(" "), 1), 3).join(" ")
+            const note = { id: uuidv4(), content: `# New Note\n\n${dateStr}\n` }
             Data.Notes.updateNoteName(note)
             this.noteSearcher.add(note)
             this.notes.push(note)
