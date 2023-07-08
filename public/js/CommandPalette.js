@@ -1,23 +1,9 @@
-import CommandSearcher from "./CommandSearcher.js"
-
-// TODO: TestCommands and CommandSearcher are prototypical! Need design/refactor!
-const TestCommands = [
-    {
-        name: "delete_note",
-        title: "Delete Note",
-        description: "Delete the currently editing note"
-    },
-    // {
-    //     name: "star_wars",
-    //     title: "Play Fanfare",
-    //     description: "Play the Star Wars title theme"
-    // }
-]
+// import CommandSearcher from "./CommandSearcher.js"
 
 
 const CommandPalette = {
     props: {
-        searcher: { type: Object, required: true }
+        getChoices: Function,
     },
     emits: [
         "chosen"
@@ -27,43 +13,15 @@ const CommandPalette = {
             searchString: "",
             selectedIndex: 0,
             maxResults: 50,
-            commandSearcher: null,
         }
     },
     mounted() {
-        this.commandSearcher = Vue.shallowRef(new CommandSearcher(TestCommands))
-        console.log("CommandPalette: mounted")
     },
 
     computed: {
         choices() {
-            console.log("CommandPalette: recalc choices")
-            let items = []
-            if (this.searchString.startsWith(">")) {
-                const term = this.searchString.slice(1).trimStart()
-                const commands = this.commandSearcher.search(term)
-                return commands.map(cmd => {
-                    return {
-                        kind: "command",
-                        text: cmd.title,
-                        data: cmd,
-                    }
-                })
-            } else {
-                let notes = []
-                if (this.searchString.length > 0) {
-                    notes.push(...this.searcher.search(this.searchString))
-                } else {
-                    notes.push(...this.searcher.search(null))
-                }
-                return _.take(notes, this.maxResults).map(note => {
-                    return {
-                        kind: "note",
-                        text: note.name,
-                        data: note,
-                    }
-                })
-            }
+            // console.log("CommandPalette: recalc choices")
+            return this.getChoices(this.searchString)
         },
         selectedChoice() {
             if (this.selectedIndex >= 0 && this.selectedIndex <= this.lastIndex) {
@@ -72,7 +30,6 @@ const CommandPalette = {
             return null
         },
         lastIndex() {
-            // const len = this.modelValue.items.length
             const len = this.choices.length
             if (len == 0) {
                 return 0
@@ -140,9 +97,6 @@ const CommandPalette = {
             @keydown="handleKeydown"
             @input="inputEvent"
             style="z-index: 101">
-        <!-- <div v-for="result,i in modelValue.items" :class="resultStyle(i)" style="z-index: 101">
-            {{result.text}}
-        </div> -->
         <div class="choice-holder">
             <div v-for="choice,i in choices" 
                  :class="choiceStyle(i)" 
@@ -151,7 +105,6 @@ const CommandPalette = {
                 {{choice.text}}
             </div>
         </div>
-        
       </div>
     `
 }

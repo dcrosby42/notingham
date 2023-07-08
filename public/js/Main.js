@@ -4,69 +4,21 @@ import NoteSearcher from "./NoteSearcher.js"
 import MessageBus from "./MessageBus.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import CommandPalette from "./CommandPalette.js"
-
+import CollapsingPanel from "./CollapsingPanel.js"
+import { bindKeys, DefaultKeybinds } from "./Keyboard.js"
 import { arrayMove } from "./utils.js"
 
 const SAVE_DELAY = 1000
 
-const DefaultKeybinds = {
-    "Escape": "closeCommandPalette",
-    "$mod+KeyP": "toggleCommandPalette",
-    "Shift+$mod+KeyP": ["openCommandPalette", { mode: "command" }],
-    "F1": ["openCommandPalette", { mode: "command" }],
-    "$mod+KeyM": "toggleEditorMode",
-    "$mod+KeyK ": "addUrl",
-    "Shift+Control+KeyT ": "toggleTask",
-    "Shift+Control+KeyN": "newNote",
-    "Shift+Control+KeyB": "toggleLeftbarShowing",
-    "Shift+Control+KeyD": "toggleDarkMode",
-    "Shift+Control+KeyF": "toggleToolbarVisible",
-    "Shift+Alt+KeyB": "cycleLeftbarState",
-    "$mod+1": ["selectPinnedNote", 0],
-    "$mod+2": ["selectPinnedNote", 1],
-    "$mod+3": ["selectPinnedNote", 2],
-    "$mod+4": ["selectPinnedNote", 3],
-    "$mod+5": ["selectPinnedNote", 4],
-    "$mod+6": ["selectPinnedNote", 5],
-    "$mod+7": ["selectPinnedNote", 6],
-    "$mod+8": ["selectPinnedNote", 7],
-    "$mod+9": ["selectPinnedNote", 8],
-    // "$mod+0": ["selectPinnedNote", 9],
-    "Shift+Control+p p": "toggleNotePinned",
-    "Shift+Control+p k": "movePinnedNoteUp",
-    "Shift+Control+p j": "movePinnedNoteDown",
-    // "$mod+k p ArrowDown": "movePinnedNoteDown",
-    "Shift+Control+BracketLeft": "navBack",
-    "Shift+Control+BracketRight": "navForward",
+const BuiltinCommands = [
+    {
+        title: "Delete Note",
+        description: "Delete the currently editing note",
+        commandFunc: main => main.deleteCurrentNote(),
+    },
+]
 
-}
 
-function bindKeys({ from, target, bindings }) {
-    tinykeys(from, _.mapValues(bindings, (action, bindingExpr) => {
-        let method
-        let args = []
-        if (_.isString(action)) {
-            method = action
-        } else if (_.isPlainObject(action)) {
-            method = action.method
-        } else if (_.isArray(action)) {
-            method = action[0]
-            args = _.tail(action)
-        }
-        if (!_.has(target, method)) {
-            console.warn(`Key binding for ${bindingExpr}: method ${method} invalid`)
-            method = null
-        }
-        return (e) => {
-            if (method) {
-                target[method](...args)
-                e.preventDefault()
-            } else {
-                console.warn(`Key binding for ${bindingExpr}: no method given`)
-            }
-        }
-    }))
-}
 
 export default {
     data() {
@@ -86,6 +38,13 @@ export default {
             failedSaves: {},
             navRecents: [],
             navIndex: 0,
+            panelStates: {
+                pinnedNotes: true,
+                boards: false,
+                search: true,
+            },
+            boards: [],
+            selectedBoardId: null,
         }
     },
     created() {
@@ -106,6 +65,30 @@ export default {
         this.navIndex = Data.Prefs.navIndex || 0
 
         this.selectNote(Data.Prefs.lastSelectedId)
+
+        this.selectedBoardId = null
+        this.boards = [
+            {
+                id: "1",
+                name: "TODO",
+            },
+            {
+                id: "2",
+                name: "Boomgate TNG",
+            },
+            {
+                id: "3",
+                name: "CAP",
+            },
+            {
+                id: "4",
+                name: "Meetings",
+            },
+        ]
+
+        //
+        // Handling NoteAPi errors:
+        //
 
         const store = new ObjectStorage(window.localStorage)
 
@@ -166,15 +149,23 @@ export default {
         }
     },
     methods: {
-        noteItemStyle(note) {
-            const active = note.id == this.selectedId
+        navItemStyle(active) {
             return {
                 'note-link': true,
                 'has-text-light': this.darkMode,
                 'has-background-dark': this.darkMode && !active,
                 'is-active': active,
-                'save-error': _.has(this.failedSaves, note.id),
             }
+        },
+        noteItemStyle(note) {
+            const active = note.id == this.selectedId
+            return _.merge(this.navItemStyle(active), {
+                'save-error': _.has(this.failedSaves, note.id),
+            })
+        },
+        boardItemStyle(board) {
+            const active = board.id == this.selectedBoardId
+            return this.navItemStyle(active)
         },
         trackChangedNote(note) {
             Data.Notes.updateNoteName(this.selectedNote)
@@ -204,7 +195,10 @@ export default {
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
         },
-        async deleteNote(note) {
+        async deleteCurrentNote(note, { promptConfirm = true } = {}) {
+            if (promptConfirm && !confirm("DELETE NOTE?\n\"" + this.selectedNote.name + "\"")) {
+                console.log("Cancel delete")
+            }
             // delete on the server
             await Data.Notes.delete(note)
             // deselect
@@ -327,6 +321,45 @@ export default {
             this.selectedId = noteId
             this.updateNavHistory(noteId)
         },
+        selectBoard(boardId) {
+            this.selectedBoardId = boardId
+        },
+        unselectBoard() {
+            this.selectedBoardId = null
+        },
+        addNoteToBoard(noteId, boardId) {
+            const board = this.boardsById[boardId]
+            if (!board.noteIds) { board.noteIds = [] }
+            board.noteIds.push(noteId)
+        },
+        getCpChoices(searchString) {
+            // if (searchString.startsWith(">")) {
+            //     const term = searchString.slice(1).trimStart()
+            //     const commands = this.commander.search(term)
+            //     return commands.map(cmd => {
+            //         return {
+            //             kind: "command",
+            //             text: cmd.title,
+            //             data: cmd,
+            //         }
+            //     })
+            // } else {
+            const maxResults = 50
+            let notes = []
+            if (searchString.length > 0) {
+                notes.push(...this.noteSearcher.search(searchString))
+            } else {
+                notes.push(...this.noteSearcher.search(null))
+            }
+            return _.take(notes, maxResults).map(note => {
+                return {
+                    kind: "note",
+                    text: note.name,
+                    data: note,
+                }
+            })
+            // }
+        },
         commandPaletteSelection(choice) {
             this.closeCommandPalette()
             if (choice.kind === "note") {
@@ -336,15 +369,11 @@ export default {
                 this.selectNote(choice.data.id)
 
             } else if (choice.kind === "command") {
-                if (choice.data.name === "delete_note") {
-                    //
-                    // delete_note
-                    //
-                    if (confirm("DELETE NOTE?\n\"" + this.selectedNote.name + "\"")) {
-                        this.deleteNote(this.selectedNote)
-                    } else {
-                        console.log("Cancel delete")
-                    }
+                //
+                // A Command was selected from the Palette
+                //
+                if (choice.data && choice.data.commandFunc) {
+                    choice.data.commandFunc(this)
                 } else {
                     console.log("Unhandled command?", choice)
                 }
@@ -386,6 +415,12 @@ export default {
             }
             Data.Prefs.navIndex = this.navIndex
         },
+        isPanelOpen(name) {
+            return !!this.panelStates[name]
+        },
+        togglePanel(name) {
+            this.panelStates[name] = !this.panelStates[name]
+        }
     },
     computed: {
         notesById() {
@@ -439,7 +474,7 @@ export default {
                 "leftbar-large": this.leftbarState == "large",
             }
         },
-        darkModeStyles() {
+        themeStyles() {
             return {
                 "has-background-dark": this.darkMode,
                 "has-text-white": this.darkMode,
@@ -450,7 +485,7 @@ export default {
         }
     },
     template: `
-    <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, darkModeStyles]">
+    <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, themeStyles]">
 
 
       <!-- LEFT BAR -->
@@ -461,43 +496,61 @@ export default {
           <div v-if="errorCount > 0" style="color: red">
               {{errorCount}} SAVE ERRORS - see Main.failedSaves
           </div>
-          <!-- "New" button -->
+
+          <!--
+            "New Note" button
+          -->
           <div>
               <button class="button is-small" @click="newNote">New</button>
           </div>
 
-          <!-- Pinned notes -->
-          <div :class="darkModeStyles">
+          <!--
+            Pinned notes
+          -->
+          <collapsing-panel title="Pinned Notes" panel="pinnedNotes" :panelStates="panelStates" :togglePanel="togglePanel">
             <ul>
                 <li v-for="note,i in pinnedNotes" @click="selectNote(note.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a></li>
             </ul>
-          </div>
+          </collapsing-panel>
 
-          <!-- Search box -->
-          <div style="display:flex">
-            <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small" :class="darkModeStyles">
-          </div>
-
-          <!-- Filtered list -->
-          <div :class="darkModeStyles" style="overflow: auto">
-            <ul style="overflow:auto">
-                <li v-for="note in filteredNotes" @click="selectNote(note.id)" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+          <!--
+            Boards
+          -->
+          <collapsing-panel title="Boards" panel="boards" :panelStates="panelStates" :togglePanel="togglePanel">
+            <ul>
+                <li v-for="board,i in boards" @click="selectBoard(board.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="boardItemStyle(board)">{{board.name}}</a></li>
             </ul>
-          </div>
+          </collapsing-panel>
+
+          <!--
+            Search
+          -->
+          <collapsing-panel title="Search" panel="search" :panelStates="panelStates" :togglePanel="togglePanel">
+            <div>
+              <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small" :class="themeStyles">
+            </div>
+            <!-- Filtered list -->
+            <div :class="themeStyles" style="overflow: auto">
+              <ul style="overflow:auto">
+                <li v-for="note in filteredNotes" @click="selectNote(note.id)" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+              </ul>
+            </div>
+          </collapsing-panel>
+
       </div>
 
 
       <!-- MAIN CONTENT -->
       <MyEditor v-model="currentContent" ref="myEditor"
-         :darkMode="darkMode" 
+         :darkMode="darkMode"
          :toolbarVisible="toolbarVisible"
          :editorMode="editorMode"
          />
 
       <CommandPalette v-if="commandPaletteShowing"
-        :searcher="noteSearcher"
+        :getChoices="getCpChoices"
         @chosen="commandPaletteSelection"
-        ref="commandPalette" 
+        ref="commandPalette"
       />
 
     </div>
@@ -505,5 +558,6 @@ export default {
     components: {
         MyEditor,
         CommandPalette,
+        CollapsingPanel,
     }
 }
