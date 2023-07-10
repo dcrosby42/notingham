@@ -40,6 +40,13 @@ class PrefsApi {
         this._storage.set("prefs.navIndex", val)
         return val
     }
+    get boards() {
+        return this._storage.get("prefs.boards")
+    }
+    set boards(val) {
+        this._storage.set("prefs.boards", val)
+        return val
+    }
 }
 if (window) {
     window.PrefsApi = PrefsApi

@@ -1,6 +1,9 @@
 import MyEditor from "./MyEditor.js"
+import BoardManager from "./BoardManager.js"
+import BoardView from "./BoardView.js"
 import Data from "./Data.js"
 import NoteSearcher from "./NoteSearcher.js"
+import ItemSearcher from "./ItemSearcher.js"
 import MessageBus from "./MessageBus.js"
 import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import CommandPalette from "./CommandPalette.js"
@@ -40,11 +43,12 @@ export default {
             navIndex: 0,
             panelStates: {
                 pinnedNotes: true,
-                boards: false,
+                boards: true,
                 search: true,
             },
             boards: [],
             selectedBoardId: null,
+            boardSearcher: null,
         }
     },
     created() {
@@ -66,25 +70,10 @@ export default {
 
         this.selectNote(Data.Prefs.lastSelectedId)
 
-        this.selectedBoardId = null
-        this.boards = [
-            {
-                id: "1",
-                name: "TODO",
-            },
-            {
-                id: "2",
-                name: "Boomgate TNG",
-            },
-            {
-                id: "3",
-                name: "CAP",
-            },
-            {
-                id: "4",
-                name: "Meetings",
-            },
-        ]
+        this.boards = BoardManager.getBoards()
+
+        this.selectedBoardId = "2"
+        this.boardSearcher = Vue.shallowRef(new ItemSearcher(this.boards, { index: ['name'] }))
 
         //
         // Handling NoteAPi errors:
@@ -168,6 +157,8 @@ export default {
             return this.navItemStyle(active)
         },
         trackChangedNote(note) {
+            console.log("trackChangedNote:", note)
+            window.LastTrackedNote = note
             Data.Notes.updateNoteName(this.selectedNote)
             this.noteSearcher.update(note)
             // deferred persistence:
@@ -318,11 +309,23 @@ export default {
             }
         },
         selectNote(noteId) {
+            this.unselectBoard()
             this.selectedId = noteId
             this.updateNavHistory(noteId)
         },
+        saveBoards() {
+            BoardManager.saveBoards(this.boards)
+        },
         selectBoard(boardId) {
-            this.selectedBoardId = boardId
+            if (boardId === this.selectedBoardId) {
+                return
+            }
+            if (this.selectedBoardId) {
+                this.unselectBoard()
+                this.$nextTick(() => { this.selectedBoardId = boardId })
+            } else {
+                this.selectedBoardId = boardId
+            }
         },
         unselectBoard() {
             this.selectedBoardId = null
@@ -330,9 +333,24 @@ export default {
         addNoteToBoard(noteId, boardId) {
             const board = this.boardsById[boardId]
             if (!board.noteIds) { board.noteIds = [] }
-            board.noteIds.push(noteId)
+            if (!_.includes(board.noteIds, noteId)) {
+                board.noteIds.push(noteId)
+                this.saveBoards()
+            }
+        },
+        removeNoteFromBoard(noteId) {
+            if (this.selectedBoard) {
+                this.selectedBoard.noteIds = _.reject(this.selectedBoard.noteIds, id => id === noteId)
+                this.saveBoards()
+            }
+        },
+        altSelectNote(noteId) {
+            if (this.selectedBoardId) {
+                this.addNoteToBoard(noteId, this.selectedBoardId)
+            }
         },
         getCpChoices(searchString) {
+            const choices = []
             // if (searchString.startsWith(">")) {
             //     const term = searchString.slice(1).trimStart()
             //     const commands = this.commander.search(term)
@@ -344,20 +362,43 @@ export default {
             //         }
             //     })
             // } else {
-            const maxResults = 50
-            let notes = []
-            if (searchString.length > 0) {
-                notes.push(...this.noteSearcher.search(searchString))
-            } else {
-                notes.push(...this.noteSearcher.search(null))
-            }
-            return _.take(notes, maxResults).map(note => {
-                return {
-                    kind: "note",
-                    text: note.name,
-                    data: note,
+            {
+                const maxBoardResults = 10
+                let boards = []
+                if (searchString.length > 0) {
+                    boards.push(...this.boardSearcher.search(searchString))
+                } else {
+                    boards.push(...this.boardSearcher.search(null))
                 }
-            })
+                const boardChoices = _.take(boards, maxBoardResults).map(board => {
+                    return {
+                        kind: "board",
+                        text: board.name,
+                        data: board,
+                    }
+                })
+                choices.push(...boardChoices)
+            }
+            {
+                const maxResults = 30
+                let notes = []
+                if (searchString.length > 0) {
+                    notes.push(...this.noteSearcher.search(searchString))
+                } else {
+                    notes.push(...this.noteSearcher.search(null))
+                }
+                const noteChoices = _.take(notes, maxResults).map(note => {
+                    return {
+                        kind: "note",
+                        text: note.name,
+                        data: note,
+                    }
+                })
+                choices.push(...noteChoices)
+            }
+
+
+            return choices
             // }
         },
         commandPaletteSelection(choice) {
@@ -367,6 +408,11 @@ export default {
                 // A Note was selected from the Palette
                 //
                 this.selectNote(choice.data.id)
+
+            } else if (choice.kind === "board") {
+                //
+                // A Board was selected from the Palette
+                this.selectBoard(choice.data.id)
 
             } else if (choice.kind === "command") {
                 //
@@ -482,7 +528,23 @@ export default {
         },
         errorCount() {
             return _.size(this.failedSaves)
-        }
+        },
+        boardsById() {
+            return _.keyBy(this.boards, "id")
+        },
+        selectedBoard() {
+            if (this.loaded && this.selectedBoardId != null) {
+                return this.boardsById[this.selectedBoardId]
+            }
+            return null;
+        },
+        showingBoard() {
+            return !!this.selectedBoard
+        },
+        showingEditor() {
+            return !this.showingBoard
+        },
+
     },
     template: `
     <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, themeStyles]">
@@ -509,7 +571,12 @@ export default {
           -->
           <collapsing-panel title="Pinned Notes" panel="pinnedNotes" :panelStates="panelStates" :togglePanel="togglePanel">
             <ul>
-                <li v-for="note,i in pinnedNotes" @click="selectNote(note.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                <li v-for="note,i in pinnedNotes" 
+                    class="leftbar-notelist-note"
+                    @click="selectNote(note.id)" 
+                    @click.right.prevent="altSelectNote(note.id)" 
+                    >{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a>
+                </li>
             </ul>
           </collapsing-panel>
 
@@ -532,7 +599,12 @@ export default {
             <!-- Filtered list -->
             <div :class="themeStyles" style="overflow: auto">
               <ul style="overflow:auto">
-                <li v-for="note in filteredNotes" @click="selectNote(note.id)" class="leftbar-notelist-note"><a :class="noteItemStyle(note)">{{note.name}}</a></li>
+                <li v-for="note in filteredNotes" 
+                    @click="selectNote(note.id)" 
+                    @click.right.prevent="altSelectNote(note.id)" 
+                    class="leftbar-notelist-note">
+                    <a :class="noteItemStyle(note)">{{note.name}}</a>
+                </li>
               </ul>
             </div>
           </collapsing-panel>
@@ -540,12 +612,21 @@ export default {
       </div>
 
 
-      <!-- MAIN CONTENT -->
-      <MyEditor v-model="currentContent" ref="myEditor"
+      <MyEditor v-if="showingEditor" v-model="currentContent" ref="myEditor"
          :darkMode="darkMode"
          :toolbarVisible="toolbarVisible"
          :editorMode="editorMode"
          />
+
+      <BoardView v-if="showingBoard" 
+        :board="selectedBoard"
+        :allNotes="notes"
+        @note-edited="trackChangedNote"
+        @board-edited="saveBoards"
+        @closed="unselectBoard"
+        @note-closed="removeNoteFromBoard"
+        :darkMode="darkMode"
+        />
 
       <CommandPalette v-if="commandPaletteShowing"
         :getChoices="getCpChoices"
@@ -557,6 +638,7 @@ export default {
   `,
     components: {
         MyEditor,
+        BoardView,
         CommandPalette,
         CollapsingPanel,
     }

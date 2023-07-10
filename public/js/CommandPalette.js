@@ -21,7 +21,27 @@ const CommandPalette = {
     computed: {
         choices() {
             // console.log("CommandPalette: recalc choices")
-            return this.getChoices(this.searchString)
+            const cs = this.getChoices(this.searchString)
+            cs.forEach((choice, i) => choice.i = i)
+            return cs
+        },
+        choiceGroups() {
+            const groups = []
+            let cgroup = { kind: null, choices: [] }
+            groups.push(cgroup)
+            if (!_.isEmpty(this.choices)) {
+                let currentKind = this.choices[0].kind
+                cgroup.kind = currentKind
+                _.each(this.choices, choice => {
+                    if (choice.kind !== currentKind) {
+                        currentKind = choice.kind
+                        cgroup = { kind: currentKind, choices: [] }
+                        groups.push(cgroup)
+                    }
+                    cgroup.choices.push(choice)
+                })
+            }
+            return groups
         },
         selectedChoice() {
             if (this.selectedIndex >= 0 && this.selectedIndex <= this.lastIndex) {
@@ -97,10 +117,11 @@ const CommandPalette = {
             @keydown="handleKeydown"
             @input="inputEvent"
             style="z-index: 101">
-        <div class="choice-holder">
-            <div v-for="choice,i in choices" 
-                 :class="choiceStyle(i)" 
-                 @click="e => {e.preventDefault(); choiceClicked(i)}"
+        <div v-for="group in choiceGroups" class="choice-holder">
+            <div class="choice-separator">{{group.kind}}</div>
+            <div v-for="choice,i in group.choices" 
+                 :class="choiceStyle(choice.i)" 
+                 @click="e => {e.preventDefault(); choiceClicked(choice.i)}"
                  style="z-index: 101">
                 {{choice.text}}
             </div>

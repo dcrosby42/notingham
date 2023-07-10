@@ -48,6 +48,11 @@
     background-color: #66B;
 }
 
+.choice-separator {
+    color: lightgrey;
+    text-transform: capitalize;
+}
+
 .note-link.is-active {
     background: #66b;
 }
@@ -56,6 +61,13 @@
     color: red !important;
 }
 
+.tile .editor-tile {
+    padding-right: 10px
+}
+
+.tile.editor-tile-row {
+    padding: 5px;
+}
 
 /* .nowrap {
     white-space: nowrap;
