@@ -18,3 +18,17 @@ export function arrayMove(arr, old_index, new_index) {
     arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
     return arr;
 };
+
+export function arrayMoveItemLeft(arr, item) {
+    const i = arr.indexOf(item)
+    const j = (i - 1) % arr.length
+    arrayMove(arr, i, j)
+    return arr
+}
+
+export function arrayMoveItemRight(arr, item) {
+    const i = arr.indexOf(item)
+    const j = (i + 1) % arr.length
+    arrayMove(arr, i, j)
+    return arr
+}

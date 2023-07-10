@@ -1,4 +1,5 @@
 import MyEditor2 from "./MyEditor2.js"
+import { arrayMoveItemLeft, arrayMoveItemRight } from "./utils.js"
 
 const BoardView = {
     props: {
@@ -28,7 +29,15 @@ const BoardView = {
         },
         notifyBoardEdited() {
             this.$emit("board-edited", this.board)
-        }
+        },
+        moveNoteUp(note) {
+            arrayMoveItemLeft(this.board.noteIds, note.id)
+            this.notifyBoardEdited()
+        },
+        moveNoteDown(note) {
+            arrayMoveItemRight(this.board.noteIds, note.id)
+            this.notifyBoardEdited()
+        },
     },
     computed: {
         notesById() {
@@ -81,6 +90,8 @@ const BoardView = {
             <div v-for="row in noteRows" class="tile is-parent editor-tile-row">
                 <div v-for="note in row" class="tile is-child" :class="noteTileStyles">
                   <div @mouseover="" @mouseleave="">
+                    <button @click="moveNoteUp(note)">&lt;</button>
+                    <button @click="moveNoteDown(note)">&gt;</button>
                     <button @click="closeNote(note)">X</button>
                   </div>
                   <MyEditor2

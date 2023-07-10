@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 import CommandPalette from "./CommandPalette.js"
 import CollapsingPanel from "./CollapsingPanel.js"
 import { bindKeys, DefaultKeybinds } from "./Keyboard.js"
-import { arrayMove } from "./utils.js"
+import { arrayMove, arrayMoveItemLeft, arrayMoveItemRight } from "./utils.js"
 
 const SAVE_DELAY = 1000
 
@@ -222,15 +222,11 @@ export default {
             }
         },
         movePinnedNoteUp() {
-            const i = this.pinnedNoteIds.indexOf(this.selectedId)
-            const j = (i - 1) % this.pinnedNoteIds.length
-            arrayMove(this.pinnedNoteIds, i, j)
+            arrayMoveItemLeft(this.pinnedNoteIds, this.selectedId)
             Data.Prefs.pinnedNotes = this.pinnedNoteIds
         },
         movePinnedNoteDown() {
-            const i = this.pinnedNoteIds.indexOf(this.selectedId)
-            const j = (i + 1) % this.pinnedNoteIds.length
-            arrayMove(this.pinnedNoteIds, i, j)
+            arrayMoveItemRight(this.pinnedNoteIds, this.selectedId)
             Data.Prefs.pinnedNotes = this.pinnedNoteIds
         },
         cycleLeftbarState() {
