@@ -67,13 +67,11 @@ export default {
 
         this.navRecents = Data.Prefs.navRecents || []
         this.navIndex = Data.Prefs.navIndex || 0
-
-        this.selectNote(Data.Prefs.lastSelectedId)
+        this.navigateHistory(0)
 
         this.boards = BoardManager.getBoards()
-
-        this.selectedBoardId = "2"
         this.boardSearcher = Vue.shallowRef(new ItemSearcher(this.boards, { index: ['name'] }))
+        // this.selectedBoardId = "2"
 
         //
         // Handling NoteAPi errors:
@@ -129,13 +127,6 @@ export default {
     },
     unmounted() {
         MessageBus.unsubscribe({ token: "mainSubs" })
-    },
-    watch: {
-        selectedId: function (newId, oldId) {
-            if (newId !== Data.Prefs.lastSelectedId) {
-                Data.Prefs.lastSelectedId = newId
-            }
-        }
     },
     methods: {
         navItemStyle(active) {
@@ -304,23 +295,25 @@ export default {
                 this.openCommandPalette()
             }
         },
-        selectNote(noteId) {
+        selectNote(noteId, { track = true } = {}) {
             this.unselectBoard()
             this.selectedId = noteId
-            this.updateNavHistory(noteId)
+            if (track) {
+                this.updateNavHistory("note", noteId)
+            }
         },
         saveBoards() {
             BoardManager.saveBoards(this.boards)
         },
-        selectBoard(boardId) {
-            if (boardId === this.selectedBoardId) {
-                return
-            }
+        selectBoard(boardId, { track = true } = {}) {
             if (this.selectedBoardId) {
                 this.unselectBoard()
                 this.$nextTick(() => { this.selectedBoardId = boardId })
             } else {
                 this.selectedBoardId = boardId
+            }
+            if (track) {
+                this.updateNavHistory("board", boardId)
             }
         },
         unselectBoard() {
@@ -421,17 +414,17 @@ export default {
                 }
             }
         },
-        updateNavHistory(noteId) {
-            if (_.includes(this.navRecents, noteId)) {
-                // Promote already-visited doc id
-                const loc = _.indexOf(this.navRecents, noteId)
-                arrayMove(this.navRecents, loc, this.navRecents.length - 1)
+        updateNavHistory(kind, id) {
+            const existsAt = _.find(this.navRecents, hitem => hitem.kind === kind && hitem.id === id)
+            // if (_.includes(this.navRecents, noteId)) {
+            if (existsAt >= 0) {
+                // Promote already-visited item
+                arrayMove(this.navRecents, existsAt, this.navRecents.length - 1)
             } else {
                 // new doc id
-                this.navRecents.push(noteId)
+                this.navRecents.push({ kind, id })
             }
 
-            this.navIndex = this.navRecents.length - 1
 
             // Constrain nav history size:
             const max = 100
@@ -439,23 +432,32 @@ export default {
             if (over > 0) {
                 this.navRecents = this.navRecents(over)
             }
+            this.navIndex = this.navRecents.length - 1
+            Data.Prefs.navIndex = this.navIndex
             Data.Prefs.navRecents = this.navRecents
         },
+        clearNavHistory() {
+            this.navRecents = []
+            Data.Prefs.navRecents = []
+        },
         navBack() {
-            this.navIndex = _.clamp(this.navIndex - 1, 0, this.navRecents.length - 1)
-            const noteId = this.navRecents[this.navIndex]
-            if (noteId && noteId.length) {
-                this.selectedId = noteId
-            }
-            Data.Prefs.navIndex = this.navIndex
+            this.navigateHistory(-1)
         },
         navForward() {
-            this.navIndex = _.clamp(this.navIndex + 1, 0, this.navRecents.length - 1)
-            const noteId = this.navRecents[this.navIndex]
-            if (noteId && noteId.length) {
-                this.selectedId = noteId
-            }
+            this.navigateHistory(+1)
+        },
+        navigateHistory(move) {
+            this.navIndex = (_.clamp(this.navIndex + move, 0, this.navRecents.length - 1))
             Data.Prefs.navIndex = this.navIndex
+            const histItem = this.navRecents[this.navIndex]
+            console.log("navigateHistory", { move, histItem })
+            if (histItem) {
+                if (histItem.kind === "note" && !_.isEmpty(histItem.id)) {
+                    this.selectNote(histItem.id, { track: false })
+                } else if (histItem.kind === "board" && !_.isEmpty(histItem.id)) {
+                    this.selectBoard(histItem.id, { track: false })
+                }
+            }
         },
         isPanelOpen(name) {
             return !!this.panelStates[name]
@@ -621,6 +623,7 @@ export default {
         @board-edited="saveBoards"
         @closed="unselectBoard"
         @note-closed="removeNoteFromBoard"
+        @note-navigated="selectNote"
         :darkMode="darkMode"
         />
 
