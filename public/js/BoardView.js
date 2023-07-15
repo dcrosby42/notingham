@@ -12,17 +12,28 @@ const BoardView = {
             focusedNoteId: null,
             // noteCols: 3,
             editorHeight: "500px",
+            editorByNoteId: {},
         }
     },
+    // mounted() {
+    //     console.log("mounted")
+    //     this.$nextTick(() => { console.log("mounted_nextTick") })
+    // },
+    // updated() {
+    //     console.log("updated")
+    // },
     methods: {
         closeBoard() {
             this.$emit('closed')
         },
         noteFocused(note) {
+            console.log(note.id)
             this.focusedNoteId = note.id
+            this.$emit("note-focused", note.id)
         },
         noteUnfocused(note) {
             this.focusedNoteId = null
+            this.$emit("note-unfocused")
         },
         closeNote(note) {
             this.$emit("note-closed", note.id)
@@ -38,6 +49,52 @@ const BoardView = {
             arrayMoveItemRight(this.board.noteIds, note.id)
             this.notifyBoardEdited()
         },
+
+        onEditorLoaded({ editor, note }) {
+            // const ed = this.editorForNoteId(note.id)
+            // if (ed) {
+            //     ed.toolbarVisibleState = true
+            // }
+
+            // console.log("onEditorLoaded", { editor, note })
+            // const ed = _.find(this.$refs.editors, ed => ed.note.id === note.id)
+            // console.log("onEditorLoaded", ed)
+            // this.editorsByNoteId[note.id] = Vue.shallowRef(editor)
+            // this.editorsByNoteId[note.id] = editor
+        },
+        editorForNoteId(noteId) {
+            return _.find(this.$refs.editors, ed => ed.note.id === noteId)
+        },
+        editor_toggleToolbarVisible() {
+            const ed = this.editorForNoteId(this.focusedNoteId)
+            if (ed) {
+                ed.toolbarVisibleState = !ed.toolbarVisibleState
+            }
+        },
+        editor_toggleEditorMode() {
+            const ed = this.editorForNoteId(this.focusedNoteId)
+            if (ed) {
+                if (ed.editorModeState === 'wysiwyg') {
+                    ed.editorModeState = 'markdown'
+                } else {
+                    ed.editorModeState = 'wysiwyg'
+                }
+            }
+        },
+        editor_addUrl() {
+            const ed = this.editorForNoteId(this.focusedNoteId)
+            if (ed) {
+                const doIt = () => ed.startAddLink()
+                if (ed.toolbarVisibleState) {
+                    ed.startAddLink()
+                } else {
+                    // toolbar must be showing
+                    ed.toolbarVisibleState = true
+                    this.$nextTick(() => ed.startAddLink())
+                }
+            }
+        }
+
     },
     computed: {
         notesById() {
@@ -96,10 +153,12 @@ const BoardView = {
                     <button @click="closeNote(note)">X</button>
                   </div>
                   <MyEditor2
+                    ref="editors"
                      :note="note"
                      @content-changed="$emit('note-edited',note)"
                      @focus="noteFocused(note)"
                      @blur="noteUnfocused(note)"
+                     @editor-loaded="editor => onEditorLoaded({editor,note})"
                      class="editor-tile"
                      :height="editorHeight"
                      :darkMode="darkMode"

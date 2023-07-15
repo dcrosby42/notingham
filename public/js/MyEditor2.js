@@ -9,14 +9,23 @@ export default {
         toolbarVisible: { type: Boolean, default: true, required: false },
         editorMode: { type: String, default: "wysiwyg", required: false },
     },
+    data() {
+        return {
+            toolbarVisibleState: this.toolbarVisible,
+            editorModeState: this.editorMode,
+            darkModeState: this.darkMode,
+        }
+
+    },
     updated() {
         if (this.editor.getMarkdown() != this.note.content) {
             this.editor.setMarkdown(this.note.content, false)
         }
     },
     watch: {
-        editorMode(mode, _oldMode) {
+        editorModeState(mode, _oldMode) {
             this.editor.changeMode(mode, true)
+            this.$nextTick(() => this.editor.focus())
         }
     },
     methods: {
@@ -52,6 +61,7 @@ export default {
             const opts = {}
             if (this.darkMode) {
                 opts.theme = "dark"
+                opts.autofocus = false
             }
             return opts
         },
@@ -69,8 +79,9 @@ export default {
             @change="handleChange"
             @focus="$emit('focus')"
             @blur="$emit('blur')"
-            :height="height" 
-            :toolbarVisible="toolbarVisible"
+            @load="editor => $emit('editor-loaded',editor)"
+            :height="height"
+            :toolbarVisible="toolbarVisibleState"
             :options="options" />
       </div>
     `,

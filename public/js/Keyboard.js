@@ -4,13 +4,9 @@ const DefaultKeybinds = {
     "$mod+KeyP": "toggleCommandPalette",
     "Shift+$mod+KeyP": ["openCommandPalette", { mode: "command" }],
     "F1": ["openCommandPalette", { mode: "command" }],
-    "$mod+KeyM": "toggleEditorMode",
-    "$mod+KeyK ": "addUrl",
-    "Shift+Control+KeyT ": "toggleTask",
     "Shift+Control+KeyN": "newNote",
     "Shift+Control+KeyB": "toggleLeftbarShowing",
     "Shift+Control+KeyD": "toggleDarkMode",
-    "Shift+Control+KeyF": "toggleToolbarVisible",
     "Shift+Alt+KeyB": "cycleLeftbarState",
     "$mod+1": ["selectPinnedNote", 0],
     "$mod+2": ["selectPinnedNote", 1],
@@ -22,12 +18,21 @@ const DefaultKeybinds = {
     "$mod+8": ["selectPinnedNote", 7],
     "$mod+9": ["selectPinnedNote", 8],
     // "$mod+0": ["selectPinnedNote", 9],
+    "Shift+Control+BracketLeft": "navBack",
+    "Shift+Control+BracketRight": "navForward",
+
+    // current note:
     "Shift+Control+p p": "toggleNotePinned",
     "Shift+Control+p k": "movePinnedNoteUp",
     "Shift+Control+p j": "movePinnedNoteDown",
-    // "$mod+k p ArrowDown": "movePinnedNoteDown",
-    "Shift+Control+BracketLeft": "navBack",
-    "Shift+Control+BracketRight": "navForward",
+    // "$mod+k p ArrowDown": "movePinnedNoteDown", // couldn't get this binding working?
+
+    // current editor:
+    "$mod+KeyK ": "editor_addUrl",
+    "Shift+Control+KeyT ": "editor_toggleTask",
+    "$mod+KeyM": "editor_toggleEditorMode",
+    "Shift+Control+KeyF": "editor_toggleToolbarVisible",
+
 }
 
 function bindKeys({ from, target, bindings }) {

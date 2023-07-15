@@ -34,7 +34,7 @@ export default {
             leftbarState: "showing",
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
-            commandPaletteShowing: false,
+            showingCommandPalette: false,
             noteSearcher: null,
             pinnedNoteIds: [],
             editorMode: "wysiwyg",
@@ -184,7 +184,7 @@ export default {
             // delete on the server
             await Data.Notes.delete(note)
             // deselect
-            this.selectedId = null
+            this.unselectNote()
             // remove from the note list
             _.pull(this.notes, note)
             // remove from the search index
@@ -212,12 +212,18 @@ export default {
                 Data.Prefs.pinnedNotes = this.pinnedNoteIds
             }
         },
-        movePinnedNoteUp() {
-            arrayMoveItemLeft(this.pinnedNoteIds, this.selectedId)
+        movePinnedNoteUp(noteId = null) {
+            if (!noteId) {
+                noteId = this.selectedId
+            }
+            arrayMoveItemLeft(this.pinnedNoteIds, noteId)
             Data.Prefs.pinnedNotes = this.pinnedNoteIds
         },
-        movePinnedNoteDown() {
-            arrayMoveItemRight(this.pinnedNoteIds, this.selectedId)
+        movePinnedNoteDown(noteId = null) {
+            if (!noteId) {
+                noteId = this.selectedId
+            }
+            arrayMoveItemRight(this.pinnedNoteIds, noteId)
             Data.Prefs.pinnedNotes = this.pinnedNoteIds
         },
         cycleLeftbarState() {
@@ -239,31 +245,44 @@ export default {
             this.darkMode = !this.darkMode
             Data.Prefs.darkMode = this.darkMode
         },
-        toggleToolbarVisible() {
-            this.toolbarVisible = !this.toolbarVisible
-        },
-        toggleEditorMode() {
-            if (this.editorMode === 'wysiwyg') {
-                this.editorMode = 'markdown'
+        editor_toggleToolbarVisible() {
+            if (this.showingBoard) {
+                this.$refs.board.editor_toggleToolbarVisible()
             } else {
-                this.editorMode = 'wysiwyg'
+                this.toolbarVisible = !this.toolbarVisible
             }
         },
-        addUrl() {
-            const doIt = () => this.$refs.myEditor.startAddLink()
-            if (this.toolbarVisible) {
-                doIt()
+        editor_toggleEditorMode() {
+            if (this.showingBoard) {
+                this.$refs.board.editor_toggleEditorMode()
             } else {
-                // toolbar must be showing
-                this.toolbarVisible = true
-                this.$nextTick(doIt)
+                if (this.editorMode === 'wysiwyg') {
+                    this.editorMode = 'markdown'
+                } else {
+                    this.editorMode = 'wysiwyg'
+                }
+            }
+        },
+        editor_addUrl() {
+            if (this.showingBoard) {
+                this.$refs.board.editor_addUrl()
+
+            } else {
+                const doIt = () => this.$refs.myEditor.startAddLink()
+                if (this.toolbarVisible) {
+                    doIt()
+                } else {
+                    // toolbar must be showing
+                    this.toolbarVisible = true
+                    this.$nextTick(doIt)
+                }
             }
 
         },
         // toggleLink() {
         //     this.$refs.myEditor.toggleLink()
         // },
-        toggleTask() {
+        editor_toggleTask() {
             this.$refs.myEditor.toggleTask()
         },
         openCommandPalette({ mode } = {}) {
@@ -271,10 +290,10 @@ export default {
             if (mode && mode == "command") {
                 initSearchString = ">"
             }
-            if (this.commandPaletteShowing) {
+            if (this.showingCommandPalette) {
                 this.$refs.commandPalette.searchString = initSearchString
             } else {
-                this.commandPaletteShowing = true
+                this.showingCommandPalette = true
                 this.$nextTick(function () {
                     if (this.$refs.commandPalette) {
                         this.$refs.commandPalette.focus()
@@ -286,21 +305,26 @@ export default {
             }
         },
         closeCommandPalette() {
-            this.commandPaletteShowing = false
+            this.showingCommandPalette = false
         },
         toggleCommandPalette() {
-            if (this.commandPaletteShowing) {
+            if (this.showingCommandPalette) {
                 this.closeCommandPalette()
             } else {
                 this.openCommandPalette()
             }
         },
-        selectNote(noteId, { track = true } = {}) {
-            this.unselectBoard()
+        selectNote(noteId, { closeBoard = true, track = true } = {}) {
+            if (closeBoard) {
+                this.unselectBoard()
+            }
             this.selectedId = noteId
             if (track) {
                 this.updateNavHistory("note", noteId)
             }
+        },
+        unselectNote() {
+            this.selectedId = null
         },
         saveBoards() {
             BoardManager.saveBoards(this.boards)
@@ -416,7 +440,7 @@ export default {
         },
         updateNavHistory(kind, id) {
             const existsAt = _.find(this.navRecents, hitem => hitem.kind === kind && hitem.id === id)
-            // if (_.includes(this.navRecents, noteId)) {
+            // if (_.includes(this.navRecents noteId)) {
             if (existsAt >= 0) {
                 // Promote already-visited item
                 arrayMove(this.navRecents, existsAt, this.navRecents.length - 1)
@@ -565,9 +589,21 @@ export default {
           </div>
 
           <!--
+            Boards
+          -->
+          <collapsing-panel title="Boards" panel="boards" :panelStates="panelStates" :togglePanel="togglePanel">
+            <ul>
+                <li v-for="board,i in boards" @click="selectBoard(board.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="boardItemStyle(board)">{{board.name}}</a></li>
+            </ul>
+          </collapsing-panel>
+
+
+          <!--
             Pinned notes
           -->
           <collapsing-panel title="Pinned Notes" panel="pinnedNotes" :panelStates="panelStates" :togglePanel="togglePanel">
+            <button @click="movePinnedNoteUp()">up</button>
+            <button @click="movePinnedNoteDown()">down</button>
             <ul>
                 <li v-for="note,i in pinnedNotes" 
                     class="leftbar-notelist-note"
@@ -575,15 +611,6 @@ export default {
                     @click.right.prevent="altSelectNote(note.id)" 
                     >{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a>
                 </li>
-            </ul>
-          </collapsing-panel>
-
-          <!--
-            Boards
-          -->
-          <collapsing-panel title="Boards" panel="boards" :panelStates="panelStates" :togglePanel="togglePanel">
-            <ul>
-                <li v-for="board,i in boards" @click="selectBoard(board.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="boardItemStyle(board)">{{board.name}}</a></li>
             </ul>
           </collapsing-panel>
 
@@ -610,13 +637,16 @@ export default {
       </div>
 
 
-      <MyEditor v-if="showingEditor" v-model="currentContent" ref="myEditor"
+      <MyEditor v-if="showingEditor"
+         v-model="currentContent"
+         ref="myEditor"
          :darkMode="darkMode"
          :toolbarVisible="toolbarVisible"
          :editorMode="editorMode"
          />
 
-      <BoardView v-if="showingBoard" 
+      <BoardView v-if="showingBoard"
+        ref="board"
         :board="selectedBoard"
         :allNotes="notes"
         @note-edited="trackChangedNote"
@@ -624,10 +654,11 @@ export default {
         @closed="unselectBoard"
         @note-closed="removeNoteFromBoard"
         @note-navigated="selectNote"
+        @note-focused="noteId => selectNote(noteId,{closeBoard:false,track:false})"
         :darkMode="darkMode"
         />
 
-      <CommandPalette v-if="commandPaletteShowing"
+      <CommandPalette v-if="showingCommandPalette"
         :getChoices="getCpChoices"
         @chosen="commandPaletteSelection"
         ref="commandPalette"
