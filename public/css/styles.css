@@ -78,6 +78,21 @@
     white-space: nowrap;
 }
 
+.board-panel-controls {
+    min-height: 24px;
+    max-height: 24px;
+}
+
+.board-panel-controls button {
+    display: none
+}
+
+
+.note-tile:hover .board-panel-controls button {
+    display: inline
+}
+
+
 .toastui-editor-ww-container .toastui-editor-contents strong,
 .toastui-editor-md-preview .toastui-editor-contents strong {
     color: inherit;

@@ -145,8 +145,8 @@ const BoardView = {
               </div>
             </div>
             <div v-for="row in noteRows" class="tile is-parent editor-tile-row">
-                <div v-for="note in row" class="tile is-child" :class="noteTileStyles">
-                  <div @mouseover="" @mouseleave="">
+                <div v-for="note in row" class="tile is-child" class="note-tile" :class="noteTileStyles">
+                  <div class="board-panel-controls">
                     <button @click="$emit('note-navigated',note.id)">Open</button>
                     <button @click="moveNoteUp(note)">&lt;</button>
                     <button @click="moveNoteDown(note)">&gt;</button>
