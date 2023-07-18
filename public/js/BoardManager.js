@@ -1,29 +1,12 @@
 import Data from "./Data.js"
+import { v4 as uuidv4 } from 'https://jspm.dev/uuid'
 
 export default class BoardManager {
     static getBoards() {
         const boards = Data.Prefs.boards || [
             {
-                id: "1",
-                name: "TODO",
-                noteIds: [],
-                view: {},
-            },
-            {
-                id: "2",
-                name: "Boomgate TNG",
-                noteIds: [],
-                view: {},
-            },
-            {
-                id: "3",
-                name: "CAP",
-                noteIds: [],
-                view: {},
-            },
-            {
-                id: "4",
-                name: "Meetings",
+                id: "defaultboard",
+                name: "My Desk",
                 noteIds: [],
                 view: {},
             },
@@ -32,8 +15,30 @@ export default class BoardManager {
         return boards
     }
 
+    static newBoard(opts = {}) {
+        return _.merge({
+            id: uuidv4(),
+            name: "New Board",
+            noteIds: [],
+            view: {},
+        }, opts)
+    }
+
     static saveBoards(boards) {
         console.log("saveBoards", boards)
         Data.Prefs.boards = boards
+    }
+
+    static cleanupNoteRefs(boards, notes) {
+        const notesById = _.keyBy(notes, "id")
+        _.each(boards, board => {
+            _.each(board.noteIds, noteId => {
+                if (!notesById[noteId]) {
+                    // stale note id in board!
+                    // remove
+                    board.noteIds = _.reject(board.noteIds, id => id === noteId)
+                }
+            })
+        })
     }
 }

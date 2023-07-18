@@ -19,16 +19,24 @@ export function arrayMove(arr, old_index, new_index) {
     return arr;
 };
 
-export function arrayMoveItemLeft(arr, item) {
-    const i = arr.indexOf(item)
-    const j = (i - 1) % arr.length
-    arrayMove(arr, i, j)
+export function arrayMoveItemBy(arr, by, item) {
+    let i = null
+    if (_.isFunction(item)) {
+        i = _.findIndex(arr, item)
+    } else {
+        i = arr.indexOf(item)
+    }
+    if (i >= 0) {
+        const j = (i + by) % arr.length
+        arrayMove(arr, i, j)
+    }
     return arr
 }
 
 export function arrayMoveItemRight(arr, item) {
-    const i = arr.indexOf(item)
-    const j = (i + 1) % arr.length
-    arrayMove(arr, i, j)
-    return arr
+    arrayMoveItemBy(arr, 1, item)
+}
+
+export function arrayMoveItemLeft(arr, item) {
+    arrayMoveItemBy(arr, -1, item)
 }

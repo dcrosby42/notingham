@@ -70,6 +70,7 @@ export default {
         this.navigateHistory(0)
 
         this.boards = BoardManager.getBoards()
+        BoardManager.cleanupNoteRefs(this.boards, this.notes)
         this.boardSearcher = Vue.shallowRef(new ItemSearcher(this.boards, { index: ['name'] }))
         // this.selectedBoardId = "2"
 
@@ -147,11 +148,14 @@ export default {
             const active = board.id == this.selectedBoardId
             return this.navItemStyle(active)
         },
-        trackChangedNote(note) {
+        trackChangedNote(note, { isNew = false } = {}) {
             console.log("trackChangedNote:", note)
-            window.LastTrackedNote = note
             Data.Notes.updateNoteName(this.selectedNote)
-            this.noteSearcher.update(note)
+            if (isNew) {
+                this.noteSearcher.add(note)
+            } else {
+                this.noteSearcher.update(note)
+            }
             // deferred persistence:
             this.changedNotes.set(note.id, note)
             this.persistChangedNotes()
@@ -169,16 +173,30 @@ export default {
         newNote() {
             const dateStr = _.take(_.drop((new Date()).toString().split(" "), 1), 3).join(" ")
             const note = { id: uuidv4(), content: `# New Note\n\n${dateStr}\n` }
-            Data.Notes.updateNoteName(note)
-            this.noteSearcher.add(note)
             this.notes.push(note)
-            this.selectNote(note.id)
-            // deferred persistence:
-            this.changedNotes.set(note.id, note)
-            this.persistChangedNotes()
+
+            if (this.showingBoard) {
+                this.addNoteToBoard(note.id, this.selectedBoardId, { toFront: true })
+                this.selectNote(note.id, { closeBoard: false })
+            } else {
+                this.selectNote(note.id)
+            }
+
+            this.trackChangedNote(note, { isNew: true })
+
+            // Data.Notes.updateNoteName(note)
+            // this.noteSearcher.add(note)
+            // // deferred persistence:
+            // this.changedNotes.set(note.id, note)
+            // this.persistChangedNotes()
         },
-        async deleteCurrentNote(note, { promptConfirm = true } = {}) {
-            if (promptConfirm && !confirm("DELETE NOTE?\n\"" + this.selectedNote.name + "\"")) {
+        async deleteCurrentNote({ promptConfirm = true } = {}) {
+            const note = this.selectedNote
+            if (!note) {
+                console.log("Skipping delete; no selected note")
+                return
+            }
+            if (promptConfirm && !confirm("DELETE NOTE?\n\"" + note.name + "\"")) {
                 console.log("Cancel delete")
             }
             // delete on the server
@@ -189,6 +207,8 @@ export default {
             _.pull(this.notes, note)
             // remove from the search index
             this.noteSearcher.remove(note)
+
+            this.clearDeletedNoteFromBoards(note.id)
         },
         selectPinnedNote(i) {
             const note = this.pinnedNotes[i]
@@ -340,14 +360,57 @@ export default {
                 this.updateNavHistory("board", boardId)
             }
         },
+        newBoard() {
+            const board = BoardManager.newBoard()
+            this.boards.push(board)
+            BoardManager.saveBoards(this.boards)
+            this.selectBoard(board.id)
+        },
+        deleteBoard() {
+            this.$nextTick(() => {
+                const board = this.selectedBoard
+                if (board) {
+                    if (confirm("Delete board '" + board.name + "'?")) {
+                        this.unselectBoard()
+                        this.boards = _.reject(this.boards, b => b.id === board.id)
+                        BoardManager.saveBoards(this.boards)
+                    }
+                }
+            })
+        },
+        renameBoard() {
+            this.$nextTick(() => {
+                const board = this.selectedBoard
+                if (board) {
+                    board.name = prompt("Board name")
+                    BoardManager.saveBoards(this.boards)
+                }
+            })
+        },
+        moveBoardDown() {
+            if (this.selectedBoardId) {
+                arrayMoveItemRight(this.boards, b => b.id === this.selectedBoardId)
+                this.saveBoards()
+            }
+        },
+        moveBoardUp() {
+            if (this.selectedBoardId) {
+                arrayMoveItemLeft(this.boards, b => b.id === this.selectedBoardId)
+                this.saveBoards()
+            }
+        },
         unselectBoard() {
             this.selectedBoardId = null
         },
-        addNoteToBoard(noteId, boardId) {
+        addNoteToBoard(noteId, boardId, { toFront = false } = {}) {
             const board = this.boardsById[boardId]
             if (!board.noteIds) { board.noteIds = [] }
             if (!_.includes(board.noteIds, noteId)) {
-                board.noteIds.push(noteId)
+                if (toFront) {
+                    board.noteIds.unshift(noteId)
+                } else {
+                    board.noteIds.push(noteId)
+                }
                 this.saveBoards()
             }
         },
@@ -356,6 +419,13 @@ export default {
                 this.selectedBoard.noteIds = _.reject(this.selectedBoard.noteIds, id => id === noteId)
                 this.saveBoards()
             }
+        },
+        clearDeletedNoteFromBoards(noteId) {
+            _.each(this.boards, board => {
+                if (_.includes(board.noteIds, noteId)) {
+                    board.noteIds = _.reject(board.noteIds, id => id === noteId)
+                }
+            })
         },
         altSelectNote(noteId) {
             if (this.selectedBoardId) {
@@ -454,7 +524,7 @@ export default {
             const max = 100
             const over = this.navRecents.length - max
             if (over > 0) {
-                this.navRecents = this.navRecents(over)
+                this.navRecents = _.drop(this.navRecents, over)
             }
             this.navIndex = this.navRecents.length - 1
             Data.Prefs.navIndex = this.navIndex
@@ -585,13 +655,19 @@ export default {
             "New Note" button
           -->
           <div>
-              <button class="button is-small" @click="newNote">New</button>
+              <button class="button is-small" @click="newNote">New Note</button>
+              <button class="button is-small" v-if="selectedNote" @click="deleteCurrentNote">Delete Note</button>
           </div>
 
           <!--
             Boards
           -->
           <collapsing-panel title="Boards" panel="boards" :panelStates="panelStates" :togglePanel="togglePanel">
+            <button @click="newBoard">new</button>
+            <button @click="moveBoardUp" v-if="selectedBoardId">up</button>
+            <button @click="moveBoardDown" v-if="selectedBoardId">down</button>
+            <button @click="deleteBoard" v-if="selectedBoardId">del</button>
+            <button @click="renameBoard" v-if="selectedBoardId">ren</button>
             <ul>
                 <li v-for="board,i in boards" @click="selectBoard(board.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="boardItemStyle(board)">{{board.name}}</a></li>
             </ul>
