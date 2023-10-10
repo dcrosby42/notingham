@@ -1,11 +1,34 @@
-# Taskfile
+# Notingham
 
+My note taking app.
+
+Go-based API + straight-JS + Vue.js
+
+Local markdown notebook storage
+
+
+## Running
+
+Prereqs:
 ```
+$ go get -u github.com/jessevdk/go-assets-builder
 $ go install github.com/go-task/task/v3/cmd/task@latest
+```
+
+Run locally:
+```
+$ task run-local
+```
+
+Unit tests:
+```
 $ task test
+```
+
+Install+run:
+```
 $ task install
 $ task run
-$ task run-local
 ```
 
 # References
