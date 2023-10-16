@@ -10,8 +10,7 @@ const BoardView = {
     data() {
         return {
             focusedNoteId: null,
-            // noteCols: 3,
-            editorHeight: "500px",
+            editorHeight: "700px",
             editorByNoteId: {},
         }
     },
@@ -145,7 +144,7 @@ const BoardView = {
               </div>
             </div>
             <div v-for="row in noteRows" class="tile is-parent editor-tile-row">
-                <div v-for="note in row" class="tile is-child" class="note-tile" :class="noteTileStyles">
+                <div v-for="note in row" class="tile is-child note-tile" :class="noteTileStyles">
                   <div class="board-panel-controls">
                     <button @click="$emit('note-navigated',note.id)">Open</button>
                     <button @click="moveNoteUp(note)">&lt;</button>

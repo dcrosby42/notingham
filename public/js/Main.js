@@ -44,6 +44,7 @@ export default {
             panelStates: {
                 pinnedNotes: true,
                 boards: true,
+                recents: false,
                 search: true,
             },
             boards: [],
@@ -262,6 +263,7 @@ export default {
             }
         },
         toggleDarkMode() {
+            console.log("dark mode toggle")
             this.darkMode = !this.darkMode
             Data.Prefs.darkMode = this.darkMode
         },
@@ -578,6 +580,17 @@ export default {
                 return []
             }
         },
+        recentNotes() {
+            return _(this.navRecents)
+                .reverse()
+                .filter(item => item.kind == "note")
+                .map(item => item.id)
+                .uniq()
+                .map(noteId => this.notesById[noteId])
+                .compact()
+                .take(10)
+                .value()
+        },
         pinnedNotes() {
             return _.compact(_.map(this.pinnedNoteIds, id => this.notesById[id]))
         },
@@ -669,7 +682,7 @@ export default {
             <button @click="deleteBoard" v-if="selectedBoardId">del</button>
             <button @click="renameBoard" v-if="selectedBoardId">ren</button>
             <ul>
-                <li v-for="board,i in boards" @click="selectBoard(board.id)" class="leftbar-notelist-note">{{i+1}}. <a :class="boardItemStyle(board)">{{board.name}}</a></li>
+                <li v-for="board,i in boards" @click="selectBoard(board.id)" class="leftbar-notelist-note"><a :class="boardItemStyle(board)">{{board.name}}</a></li>
             </ul>
           </collapsing-panel>
 
@@ -688,6 +701,23 @@ export default {
                     >{{i+1}}. <a :class="noteItemStyle(note)">{{note.name}}</a>
                 </li>
             </ul>
+          </collapsing-panel>
+
+          <!--
+            Recents
+          -->
+          <collapsing-panel title="Recents" panel="recents" :panelStates="panelStates" :togglePanel="togglePanel">
+            <!-- Filtered list -->
+            <div :class="themeStyles" style="overflow: auto">
+              <ul style="overflow:auto">
+                <li v-for="note in recentNotes" 
+                    @click="selectNote(note.id)" 
+                    @click.right.prevent="altSelectNote(note.id)" 
+                    class="leftbar-notelist-note">
+                    <a :class="noteItemStyle(note)">{{note.name}}</a>
+                </li>
+              </ul>
+            </div>
           </collapsing-panel>
 
           <!--
