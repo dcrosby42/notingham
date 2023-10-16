@@ -11,7 +11,7 @@ Local markdown notebook storage
 
 Prereqs:
 ```
-$ go get -u github.com/jessevdk/go-assets-builder
+$ go install github.com/jessevdk/go-assets-builder@latest
 $ go install github.com/go-task/task/v3/cmd/task@latest
 ```
 
