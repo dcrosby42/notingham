@@ -64,7 +64,7 @@ export default {
         bindKeys({ from: window, target: this, bindings: DefaultKeybinds })
 
         this.pinnedNoteIds = Data.Prefs.pinnedNotes || []
-        Data.Prefs.pinnedNoteIds = this.pinnedNoteIds // save em back just in case
+        Data.Prefs.pinnedNoteIds = this.pinnedNoteIds // save em back just in case // DELETEME this is bogus, Prefs.pinnedNoteIds isn't a thing.
 
         this.navRecents = Data.Prefs.navRecents || []
         this.navIndex = Data.Prefs.navIndex || 0

@@ -6,4 +6,8 @@ const Data = {
     Prefs: new PrefsApi(),
 }
 
+if (window) {
+    // DELETEME debugging
+    window.Data = Data
+}
 export default Data
