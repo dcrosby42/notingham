@@ -13,6 +13,10 @@ type Notebook interface {
 	GetNote(id string) (Note, error)
 	SaveNote(Note) error
 	DeleteNote(string) error
+
+	ObjectExists(kind, id string) bool
+	GetObjectBytes(kind, id string) ([]byte, error)
+	StoreObjectBytes(kind, id string, data []byte) error
 }
 
 type Note struct {

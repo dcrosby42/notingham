@@ -2,6 +2,7 @@ package fsdb
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -30,7 +31,7 @@ func NewNotebook(dir string) (*Notebook, error) {
 }
 
 func (me *Notebook) setupDirs() error {
-	subdirs := []string{"notes"} // objects assets trash
+	subdirs := []string{"notes", "objects"} // objects assets trash
 	for _, subdir := range subdirs {
 		err := os.MkdirAll(path.Join(me.Dir, subdir), 0755)
 		if err != nil {
@@ -49,9 +50,15 @@ func (me *Notebook) idFromPath(notePath string) string {
 func (me *Notebook) isNoteFile(notePath string) bool {
 	return filepath.Ext(notePath) == NoteFileExt
 }
-
 func (me *Notebook) notesDir() string {
 	return path.Join(me.Dir, "notes")
+}
+
+func (me *Notebook) objectsDir() string {
+	return path.Join(me.Dir, "objects")
+}
+func (me *Notebook) objectPath(kind, id string) string {
+	return path.Join(me.objectsDir(), fmt.Sprintf("%s.%s.json", id, kind))
 }
 
 func (me *Notebook) SaveNote(note db.Note) error {
@@ -121,8 +128,37 @@ func (me *Notebook) AllNoteIds() ([]string, error) {
 	return ids, nil
 }
 
-// AllNotes() ([]Note, error)
-// AllNoteIds() ([]string, error)
-// GetNote(id string) (Note, error)
-// SaveNote(Note) (Note, error)
-// DeleteNote(string) (Note, error)
+func (me *Notebook) ObjectExists(kind, id string) bool {
+	return util.FileExists(me.objectPath(kind, id))
+}
+
+func (me *Notebook) GetObjectBytes(kind, id string) (data []byte, err error) {
+	if kind == "" {
+		return nil, errors.New("cannot get objects without kind")
+	}
+	if id == "" {
+		return nil, errors.New("cannot get objects without id")
+	}
+	data, err = os.ReadFile(me.objectPath(kind, id))
+	return
+}
+
+func (me *Notebook) StoreObjectBytes(kind, id string, data []byte) error {
+	if kind == "" {
+		return errors.New("cannot store objects without kind")
+	}
+	if id == "" {
+		return errors.New("cannot store objects without id")
+	}
+	return os.WriteFile(me.objectPath(kind, id), data, 0644)
+}
+
+func (me *Notebook) DeleteObject(kind, id string) error {
+	if kind == "" {
+		return errors.New("cannot delete objects without kind")
+	}
+	if id == "" {
+		return errors.New("cannot delete objects without id")
+	}
+	return os.Remove(me.objectPath(kind, id))
+}
