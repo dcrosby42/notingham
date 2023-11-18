@@ -16,7 +16,6 @@ func init() {
 	serverCmd.Flags().StringVar(&serverConfig.BindHost, "host", "127.0.0.1", "server host/ip to bind")
 	serverCmd.Flags().StringVar(&serverConfig.SiteDir, "site-dir", "", "dir from which to serve web assets; default is baked-in assets")
 	serverCmd.Flags().StringVar(&serverConfig.DataDir, "data-dir", "", "where notes and objects are stored on disk")
-	serverCmd.Flags().BoolVar(&serverConfig.UseOldNotebookStyle, "old-style", false, "use original note repo impl")
 	Notingham.AddCommand(serverCmd)
 }
 

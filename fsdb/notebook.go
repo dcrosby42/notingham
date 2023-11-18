@@ -18,6 +18,8 @@ type Notebook struct {
 	Dir string
 }
 
+var _ db.Notebook = &Notebook{} // compile-time check that *fsdb.Notebook implements db.Notebook interface
+
 func NewNotebook(dir string) (*Notebook, error) {
 	notebook := &Notebook{Dir: dir}
 	err := notebook.setupDirs()

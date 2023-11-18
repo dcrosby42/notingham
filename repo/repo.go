@@ -15,6 +15,8 @@ type Repo struct {
 	Notebooks map[string]db.Notebook
 }
 
+var _ db.Repo = &Repo{} // compile-time check that *repo.Repo implements db.Repo interface
+
 func New(repoDir string) db.Repo {
 	return &Repo{
 		RepoDir:   repoDir,
