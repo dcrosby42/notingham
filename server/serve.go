@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -92,6 +93,40 @@ func Serve(config Config, done chan os.Signal) error {
 			if err == nil {
 				c.JSON(200, gin.H{})
 				return
+			}
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+	})
+
+	// Get an object
+	router.GET("/api/v1/notebooks/:notebook/objects/:kind/:id", func(c *gin.Context) {
+		var err error
+		var notebook db.Notebook
+		notebook, err = myRepo.GetNotebook(c.Param("notebook"))
+		if err == nil {
+			data, err := notebook.GetObjectBytes(c.Param("kind"), c.Param("id"))
+			if err == nil {
+				c.Data(200, "application/json", data)
+				return
+			} else {
+				c.JSON(400, gin.H{"error": err.Error()})
+			}
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+	})
+
+	// Store an object
+	router.POST("/api/v1/notebooks/:notebook/objects/:kind/:id", func(c *gin.Context) {
+		var err error
+		notebook, err := myRepo.GetNotebook(c.Param("notebook"))
+		if err == nil {
+			data, err := io.ReadAll(c.Request.Body)
+			if err == nil {
+				err = notebook.StoreObjectBytes(c.Param("kind"), c.Param("id"), data)
+				if err == nil {
+					c.JSON(200, gin.H{})
+					return
+				}
 			}
 		}
 		c.JSON(500, gin.H{"error": err.Error()})

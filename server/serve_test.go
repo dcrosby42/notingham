@@ -127,14 +127,6 @@ func Test_save_note(t *testing.T) {
 	})
 }
 
-type NotebookFixture struct {
-	NotebookId  string
-	DataDir     string
-	NotebookDir string
-	Notes       map[string]db.Note
-	NoteIds     []string
-}
-
 func Test_delete_note(t *testing.T) {
 	notebookFix := NewNotebookFixture(t)
 	targetNote := notebookFix.Notes[notebookFix.NoteIds[0]]
@@ -164,6 +156,53 @@ func Test_delete_note(t *testing.T) {
 		_, found := byId[targetNote.Id]
 		Assert(t).That(found, IsFalse())
 	})
+}
+
+type TestSnackObject struct {
+	Flavor   string
+	Calories int
+}
+
+func Test_object_storage(t *testing.T) {
+	notebookFix := NewNotebookFixture(t)
+	config := server.Config{DataDir: notebookFix.DataDir}
+
+	t.Run("store new object", func(t *testing.T) {
+		obj1 := TestSnackObject{Flavor: "chocolate", Calories: 120}
+		objectKind := "snack"
+		objectId := "choco1"
+
+		WithNotingham(t, config, func(fix *NotinghamFixture) {
+			// Save the note
+			url := fix.Api("/notebooks/%s/objects/%s/%s", notebookFix.NotebookId, objectKind, objectId)
+			jsonBytes, err := json.Marshal(obj1)
+			Assert(t).That(err, IsNil())
+			resp, err := fix.Client.R().
+				SetHeader("Content-Type", "application/json").
+				SetBody(jsonBytes).
+				Post(url)
+			assertOk(t, resp, err)
+
+			// Retrieve the content
+			url2 := fix.Api("/notebooks/%s/objects/%s/%s", notebookFix.NotebookId, objectKind, objectId)
+			got := TestSnackObject{}
+			resp2, err := fix.Client.R().
+				SetHeader("Accept", "application/json").
+				SetResult(&got).
+				Get(url2)
+			assertOk(t, resp2, err)
+			// Assert the object was saved and returned:
+			Assert(t).That(got, Equals(obj1))
+		})
+	})
+}
+
+type NotebookFixture struct {
+	NotebookId  string
+	DataDir     string
+	NotebookDir string
+	Notes       map[string]db.Note
+	NoteIds     []string
 }
 
 func NewNotebookFixture(t *testing.T) *NotebookFixture {
