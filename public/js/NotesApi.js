@@ -1,21 +1,24 @@
 import MessageBus from "./MessageBus.js"
-class NotesApi {
-    static notebook() {
-        const defaultName = "Netskope"
-        let name = window.localStorage.getItem("notes_api.notebook")
-        if (!name || name === "") {
-            name = defaultName
-            NotesApi.setNotebook(name)
-        }
-        return name
-    }
-    static setNotebook(name) {
-        window.localStorage.setItem("notes_api.notebook", name)
-    }
 
+class NotesApi {
+    // static notebook() {
+    //     const defaultName = "Cisco"
+    //     let name = window.localStorage.getItem("notes_api.notebook")
+    //     if (!name || name === "") {
+    //         name = defaultName
+    //         NotesApi.setNotebook(name)
+    //     }
+    //     return name
+    // }
+    // static setNotebook(name) {
+    //     window.localStorage.setItem("notes_api.notebook", name)
+    // }
+    constructor({ notebook }) {
+        this.notebook = notebook
+    }
     async getAll() {
         try {
-            const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes`)
+            const resp = await fetch(`/api/v1/notebooks/${this.notebook}/notes`)
             const notes = await resp.json()
             notes.forEach(note => {
                 note.type = "note"
@@ -31,7 +34,7 @@ class NotesApi {
     }
     async save(note) {
         try {
-            const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes/${note.id}`, {
+            const resp = await fetch(`/api/v1/notebooks/${this.notebook}/notes/${note.id}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: note.id, content: note.content })
@@ -60,7 +63,7 @@ class NotesApi {
 
     async delete(note) {
         try {
-            const resp = await fetch(`/api/v1/notebooks/${NotesApi.notebook()}/notes/${note.id}`, {
+            const resp = await fetch(`/api/v1/notebooks/${this.notebook}/notes/${note.id}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 // body: JSON.stringify({ id: note.id, content: note.content })
