@@ -1,6 +1,3 @@
-/*
-   copyright: (c) 2020 Netskope, Inc. All rights reserved.
-*/
 package main
 
 // This was lifted from a repo in jboelens' private github account
