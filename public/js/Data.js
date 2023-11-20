@@ -13,8 +13,11 @@ if (window && window.localStorage) {
 }
 
 Data.Notes = new NotesApi({ notebook: Data.Notebook })
-Data.Prefs = new PrefsApi()
 Data.ObjectsApi = new ObjectsApi({ notebook: Data.Notebook })
+Data.Prefs = new PrefsApi({
+    localObjectStore: new ObjectStorage(window.localStorage),
+    objectsApi: Data.ObjectsApi,
+})
 
 if (window) {
     // DELETEME debugging
