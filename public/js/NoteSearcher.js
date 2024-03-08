@@ -112,10 +112,12 @@ export default class NoteSearcher {
     }
     update(note) {
         this.searchModel.update(note)
+        this.tagSearchModel.update(note)
     }
 
     remove(note) {
         this.searchModel.remove(note.id)
+        this.tagSearchModel.remove(note)
         delete this.notesById[note.id]
     }
 
