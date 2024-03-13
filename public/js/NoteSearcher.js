@@ -5,7 +5,7 @@ const extractTagsFromLine = line =>
         .value();
 
 const extractTagsFromContent = content =>
-    _(content.split("\n")).flatMap(extractTagsFromLine).value();
+    _(content.split("\n")).flatMap(extractTagsFromLine).map(_.toLower).value();
 
 class TagMap {
     constructor() {
@@ -62,7 +62,7 @@ class TagSearchModel {
         const tags = extractTagsFromLine(str)
         if (tags.length > 0) {
             const tag = tags[0]
-            return this.tagmap.get(tag)
+            return this.tagmap.get(tag.toLowerCase())
         }
         return []
     }
