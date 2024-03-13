@@ -1,18 +1,19 @@
 
 const CollapsingPanel = {
-    props: {
-        panel: String,
-        title: String,
-        panelStates: Object,
-        togglePanel: Function,
-    },
-    computed: {
-        isPanelOpen() {
-            return !!this.panelStates[this.panel]
-        }
-    },
-    template: `
-      <div v-if="isPanelOpen">
+  props: {
+    panel: String,
+    title: String,
+    panelStates: Object,
+    isExpanded: Boolean,
+    togglePanel: Function,
+  },
+  computed: {
+    // isPanelOpen() {
+    //   return !!this.panelStates[this.panel]
+    // }
+  },
+  template: `
+      <div v-if="isExpanded">
         <div @click="togglePanel(panel)" style="cursor:pointer">[-] {{title}}</div>
         <slot></slot>
       </div>

@@ -92,6 +92,12 @@
     display: inline
 }
 
+.tag-list-item {
+    padding: 2px;
+    border: 1px white;
+    border-radius: 2px;
+}
+
 
 .toastui-editor-ww-container .toastui-editor-contents strong,
 .toastui-editor-md-preview .toastui-editor-contents strong {

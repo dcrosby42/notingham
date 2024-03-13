@@ -22,6 +22,10 @@ class TagMap {
         return ids && ids.length > 0
     }
 
+    listTags() {
+        return _(this.tags_to_ids).keys().sortBy().value();
+    }
+
     add(tag, id) {
         let ids = this.tags_to_ids[tag]
         if (!ids) {
@@ -79,13 +83,19 @@ class TagSearchModel {
     remove(note) {
         this.tagmap.remove(note.id)
     }
+
+    listTags() {
+        return this.tagmap.listTags()
+    }
 }
 
 export default class NoteSearcher {
     constructor(notes) {
         this.notes = notes
         this.notesById = _.keyBy(this.notes, "id")
-        this._reset() // searchModel, tagSearchModel
+        this.searchModel = null
+        this.tagSearchModel = null
+        this._reset() // constructs searchModel, tagSearchModel
     }
     search(str) {
         if (!str || str.length === 0) {
