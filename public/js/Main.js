@@ -31,6 +31,7 @@ export default {
             selectedId: null,
             changedNotes: new Map(),
             searchString: "",
+            tagFilter: "",
             leftbarState: "showing",
             darkMode: Data.Prefs.darkMode,
             toolbarVisible: true,
@@ -46,6 +47,7 @@ export default {
                 boards: true,
                 recents: false,
                 search: true,
+                tags: false,
             },
             boards: [],
             selectedBoardId: null,
@@ -184,12 +186,6 @@ export default {
             }
 
             this.trackChangedNote(note, { isNew: true })
-
-            // Data.Notes.updateNoteName(note)
-            // this.noteSearcher.add(note)
-            // // deferred persistence:
-            // this.changedNotes.set(note.id, note)
-            // this.persistChangedNotes()
         },
         async deleteCurrentNote({ promptConfirm = true } = {}) {
             const note = this.selectedNote
@@ -649,7 +645,15 @@ export default {
         showingEditor() {
             return !this.showingBoard
         },
-
+        tagList() {
+            if (this.noteSearcher && this.noteSearcher.tagSearchModel) {
+                return this.noteSearcher.tagSearchModel.listTags()
+            }
+            return []
+        },
+        filteredTagList() {
+            return this.tagList
+        },
     },
     template: `
     <div class="notingham-root simple-editor-grid" style="position:relative" :class="[rootStyles, themeStyles]">
@@ -675,7 +679,7 @@ export default {
           <!--
             Boards
           -->
-          <collapsing-panel title="Boards" panel="boards" :panelStates="panelStates" :togglePanel="togglePanel">
+          <collapsing-panel title="Boards" panel="boards" :isExpanded="isPanelOpen('boards')" :togglePanel="togglePanel">
             <button @click="newBoard">new</button>
             <button @click="moveBoardUp" v-if="selectedBoardId">up</button>
             <button @click="moveBoardDown" v-if="selectedBoardId">down</button>
@@ -690,7 +694,7 @@ export default {
           <!--
             Pinned notes
           -->
-          <collapsing-panel title="Pinned Notes" panel="pinnedNotes" :panelStates="panelStates" :togglePanel="togglePanel">
+          <collapsing-panel title="Pinned Notes" panel="pinnedNotes" :isExpanded="isPanelOpen('pinnedNotes')" :togglePanel="togglePanel">
             <button @click="movePinnedNoteUp()">up</button>
             <button @click="movePinnedNoteDown()">down</button>
             <ul>
@@ -706,7 +710,7 @@ export default {
           <!--
             Recents
           -->
-          <collapsing-panel title="Recents" panel="recents" :panelStates="panelStates" :togglePanel="togglePanel">
+          <collapsing-panel title="Recents" panel="recents" :isExpanded="isPanelOpen('recents')" :togglePanel="togglePanel">
             <!-- Filtered list -->
             <div :class="themeStyles" style="overflow: auto">
               <ul style="overflow:auto">
@@ -723,7 +727,7 @@ export default {
           <!--
             Search
           -->
-          <collapsing-panel title="Search" panel="search" :panelStates="panelStates" :togglePanel="togglePanel">
+          <collapsing-panel title="Search" panel="search" :isExpanded="isPanelOpen('search')" :togglePanel="togglePanel">
             <div>
               <input v-model="searchString" type="text" placeholder="Search notes" class="input is-small" :class="themeStyles">
             </div>
@@ -737,6 +741,18 @@ export default {
                     <a :class="noteItemStyle(note)">{{note.name}}</a>
                 </li>
               </ul>
+            </div>
+          </collapsing-panel>
+
+          <!--
+            Tags
+          -->
+          <collapsing-panel title="Tags" panel="tags" :isExpanded="isPanelOpen('tags')" :togglePanel="togglePanel">
+            <div>
+              <input v-model="tagFilter" type="text" placeholder="Tags" class="input is-small" :class="themeStyles">
+            </div>
+            <div class="tag-list-holder" :class="themeStyles" style="overflow: auto">
+              <span class="tag-list-item" v-for="tag in filteredTagList">{{ tag }}</span>
             </div>
           </collapsing-panel>
 
