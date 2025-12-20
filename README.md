@@ -10,33 +10,35 @@ Local markdown notebook storage
 ## Running
 
 Prereqs:
+
 ```
-$ go install github.com/jessevdk/go-assets-builder@latest
-$ go install github.com/go-task/task/v3/cmd/task@latest
+$ brew install golang
+$ brew install just     # Command runner, see: https://github.com/casey/just
+$ just setup            # installs some project-needed tools like assets builder
 ```
 
 Run locally:
 ```
-$ task run-local
+$ just run-local
 ```
 
 Unit tests:
 ```
-$ task test
+$ just test
 ```
 
 Install+run:
 ```
-$ task install
-$ task run
+$ just install
+$ just run
 ```
 
 # References
 
 ## Vue3 Compositon API
 
-https://vuejs.org/guide/extras/composition-api-faq.html
-
+* https://vuejs.org/guide/extras/composition-api-faq.html
+* https://github.com/casey/just
 
 
 ## Panzoom
