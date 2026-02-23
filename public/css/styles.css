@@ -61,6 +61,11 @@
     color: red !important;
 }
 
+.note-id {
+    font-size: 0.8em;
+    color: grey;
+}
+
 .tile .editor-tile {
     padding-right: 10px
 }
@@ -83,12 +88,12 @@
     max-height: 24px;
 }
 
-.board-panel-controls button {
+.board-panel-controls button, .board-panel-controls .note-id {
     display: none
 }
 
 
-.note-tile:hover .board-panel-controls button {
+.note-tile:hover .board-panel-controls button, .note-tile:hover .board-panel-controls .note-id {
     display: inline
 }
 

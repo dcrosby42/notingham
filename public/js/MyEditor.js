@@ -12,6 +12,7 @@ export default {
         darkMode: { type: Boolean, default: true, required: false },
         toolbarVisible: { type: Boolean, default: true, required: false },
         editorMode: { type: String, default: "wysiwyg", required: false },
+        noteId: { type: String, required: false },
     },
     data() {
         return {
@@ -71,6 +72,7 @@ export default {
     },
     template: `
       <div>
+          <span class="note-id">{{noteId}}</span>
           <VueEditor 
             ref="editor" 
             previewStyle="tab" 

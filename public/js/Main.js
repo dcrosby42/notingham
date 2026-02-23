@@ -765,6 +765,7 @@ export default {
          :darkMode="darkMode"
          :toolbarVisible="toolbarVisible"
          :editorMode="editorMode"
+         :noteId="selectedNote ? selectedNote.id : null"
          />
 
       <BoardView v-if="showingBoard"

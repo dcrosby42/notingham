@@ -150,6 +150,7 @@ const BoardView = {
                     <button @click="moveNoteUp(note)">&lt;</button>
                     <button @click="moveNoteDown(note)">&gt;</button>
                     <button @click="closeNote(note)">X</button>
+                    <span class="note-id">{{note.id}}</span>
                   </div>
                   <MyEditor2
                     ref="editors"
